@@ -39,6 +39,5 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 
 clean:
 	rm -rf *.exe
-	rm -rf *.o
-	rm -rf *.so
+	rm -rf lib/*.so
 	rm -f *~
