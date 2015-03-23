@@ -5,15 +5,10 @@
 #include <math.h>
 #include <string>
 
-#include "fastjet/ClusterSequence.hh"
 #include "fastjet/PseudoJet.hh"  
-#include "fastjet/tools/Filter.hh"
-#include "fastjet/Selector.hh"
 
 #include "TFile.h"
 #include "TTree.h"
-#include "TClonesArray.h"
-#include "TParticle.h"
 
 #include "Pythia8/Pythia.h"
 
@@ -48,6 +43,11 @@ class TimingAnalysis{
 	std::vector<float> *j0cleta;
 	std::vector<float> *j0cltime;
 
+	std::vector<float> *truejpt;
+	std::vector<float> *truejphi;
+	std::vector<float> *truejeta;
+	std::vector<float> *truejtime;
+
     public:
         TimingAnalysis ();
         ~TimingAnalysis ();
@@ -65,6 +65,7 @@ class TimingAnalysis{
         }
        
        	void FillTree(vector<fastjet::PseudoJet> jets);
+       	void FillTruthTree(vector<fastjet::PseudoJet> jets);
 
 	double GetIPprob(double zpos, double time);
 	double ComputeTime(fastjet::PseudoJet jet);

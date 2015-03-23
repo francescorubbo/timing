@@ -14,12 +14,11 @@
 #include "TimingAnalysis.h"
 
 #include "TimingInfo.h"
-#include "fastjet/ClusterSequence.hh"
 #include "fastjet/PseudoJet.hh"  
-#include "fastjet/tools/Filter.hh"
 #include "fastjet/Selector.hh"
 #include "fastjet/ClusterSequenceArea.hh"
-#include "fastjet/ClusterSequenceActiveAreaExplicitGhosts.hh"
+#include "fastjet/tools/GridMedianBackgroundEstimator.hh"
+#include "fastjet/tools/Subtractor.hh"
 
 #include "Pythia8/Pythia.h"
 #include "TROOT.h"
@@ -64,6 +63,11 @@ void TimingAnalysis::Begin(){
    j0cleta = new vector<float>();  
    j0cltime = new vector<float>();  
 
+   truejpt = new vector<float>();  
+   truejphi = new vector<float>();  
+   truejeta = new vector<float>();  
+   truejtime = new vector<float>();  
+
    ResetBranches();
    
    return;
@@ -84,6 +88,11 @@ void TimingAnalysis::End(){
     delete j0clphi;
     delete j0cleta;
     delete j0cltime;
+
+    delete truejpt;
+    delete truejphi;
+    delete truejeta;
+    delete truejtime;
 
     return;
 }
@@ -128,7 +137,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 	double radius = 1.2; // barrel radius=1.2 meter
 	double zbase = radius*sinh(minEta)*eta/fabs(eta);
 	double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
-	if(fabs(corrEta)<minEta) continue;
 	if(fabs(corrEta)>5.0) continue;
 	double dist = (zbase-zvtx)*cosheta/sinheta;
 	double time = fabs(dist)/LIGHTSPEED;
@@ -145,8 +153,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     }
    
     // Particle loop -----------------------------------------------------------
-    // for (int ip=0; ip<pythia8->event.size(); ++ip){
-    for (int ip=0; ip<1; ++ip){
+    for (int ip=0; ip<pythia8->event.size(); ++ip){
       
       if (!pythia8->event[ip].isFinal() )      continue;
       //if (fabs(pythia8->event[ip].id())  ==11) continue;
@@ -157,7 +164,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
       
       fastjet::PseudoJet p(pythia8->event[ip].px(), pythia8->event[ip].py(), pythia8->event[ip].pz(),pythia8->event[ip].e() ); 
       double eta = p.rapidity();
-      if (fabs(eta)<minEta) continue;
       if (fabs(eta)>5.0) continue;
       p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
       p.set_user_info(new TimingInfo(pythia8->event[ip].id(),ip,0, false,0.)); //0 for the primary vertex. 
@@ -170,9 +176,18 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     fastjet::JetDefinition jetDef(fastjet::antikt_algorithm, 0.4, fastjet::E_scheme, fastjet::Best);
     fastjet::AreaDefinition active_area(fastjet::active_area);
     fastjet::ClusterSequenceArea clustSeq(particlesForJets, jetDef, active_area);
+
+    fastjet::GridMedianBackgroundEstimator bge(4.5,0.6);
+    bge.set_particles(particlesForJets);
+    fastjet::Subtractor subtractor(&bge);
+
     vector<fastjet::PseudoJet> inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
-    
-    FillTree(inclusiveJets);
+    vector<fastjet::PseudoJet> subtractedJets = subtractor(inclusiveJets);
+    FillTree(subtractedJets);
+
+    fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
+    vector<fastjet::PseudoJet> truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
+    FillTruthTree(truthJets);
 
     tT->Fill();
 
@@ -197,6 +212,16 @@ void TimingAnalysis::FillTree(vector<fastjet::PseudoJet> jets){
       j0cleta->push_back(jets[0].constituents()[icl].eta());
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
     }  
+}
+
+void TimingAnalysis::FillTruthTree(vector<fastjet::PseudoJet> jets){  
+
+  for (unsigned int ijet=0; ijet<jets.size(); ijet++){
+    truejpt->push_back(jets[ijet].pt());
+    truejeta->push_back(jets[ijet].eta());
+    truejphi->push_back(jets[ijet].phi());
+    truejtime->push_back(ComputeTime(jets[ijet]));
+  }
 }
 
 double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet){
@@ -232,6 +257,11 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0cleta","std::vector<float>",&j0cleta);
   tT->Branch("j0cltime","std::vector<float>",&j0cltime);
 
+  tT->Branch("truejpt", "std::vector<float>",&truejpt);
+  tT->Branch("truejphi","std::vector<float>",&truejphi);
+  tT->Branch("truejeta","std::vector<float>",&truejeta);
+  tT->Branch("truejtime","std::vector<float>",&truejtime);
+
    return;
 }
 
@@ -250,6 +280,10 @@ void TimingAnalysis::ResetBranches(){
       j0clphi->clear();
       j0cleta->clear();
       j0cltime->clear();
+      truejpt->clear();
+      truejphi->clear();
+      truejeta->clear();
+      truejtime->clear();
 
 }
 
