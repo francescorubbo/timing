@@ -144,9 +144,13 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 	double refdist = zbase*cosh(corrEta)/sinh(corrEta);
 	double reftime = fabs(refdist)/LIGHTSPEED;
 
+	double corrtime = (time-reftime)*1e9;
+	if(fabs(corrEta)<minEta) 
+	  corrtime = -999.;
+
 	p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
 	
-	p.set_user_info(new TimingInfo(pythia_MB->event[i].id(),i,iPU,true,(time-reftime)*1e9)); 
+	p.set_user_info(new TimingInfo(pythia_MB->event[i].id(),i,iPU,true,corrtime)); 
 	particlesForJets.push_back(p); 
       }
       if (!pythia_MB->next()) continue;
@@ -165,8 +169,10 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
       fastjet::PseudoJet p(pythia8->event[ip].px(), pythia8->event[ip].py(), pythia8->event[ip].pz(),pythia8->event[ip].e() ); 
       double eta = p.rapidity();
       if (fabs(eta)>5.0) continue;
+      double corrtime = 0.;
+      if (fabs(eta)<minEta) corrtime = -999.;
       p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
-      p.set_user_info(new TimingInfo(pythia8->event[ip].id(),ip,0, false,0.)); //0 for the primary vertex. 
+      p.set_user_info(new TimingInfo(pythia8->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
       
       particlesForJets.push_back(p);
       particlesForJets_np.push_back(p);
@@ -183,11 +189,15 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 
     vector<fastjet::PseudoJet> inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
     vector<fastjet::PseudoJet> subtractedJets = subtractor(inclusiveJets);
-    FillTree(subtractedJets);
+    Selector select_fwd = SelectorAbsRapRange(minEta,4.5);
+    vector<fastjet::PseudoJet> selectedJets = select_fwd(subtractedJets);
+
+    FillTree(selectedJets);
 
     fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
     vector<fastjet::PseudoJet> truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
-    FillTruthTree(truthJets);
+    vector<fastjet::PseudoJet> selectedTruthJets = select_fwd(truthJets);
+    FillTruthTree(selectedTruthJets);
 
     tT->Fill();
 
