@@ -35,7 +35,7 @@ chmod u+x $SubFileLoc
 
 #----------------
 Process=4
-zspread=0
+bunchsize=0.075
 for mu in 80; do
     Queue=short
     nevents=200
@@ -56,7 +56,7 @@ for mu in 80; do
             --OutFile ${OutDir}/Sample_mu_${mu}_nevents_${nevents}_job_${ii}.root \
             --Proc ${Process} \
             --NEvents ${nevents} \
-            --Zspread ${zspread} \
+            --BunchSize ${bunchsize} \
 	    --Seed ${ii}
 
     done
