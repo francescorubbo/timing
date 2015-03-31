@@ -49,7 +49,7 @@ int main(int argc, char* argv[]){
     // agruments 
     string outName   = "Timing.root";
     int    pileup    = 0;
-    float  zspread   = 0;
+    float  bunchsize = 0.075;
     float  minEta    = 2.5;
     int    nEvents   = 1;
     int    fDebug    = 1;
@@ -65,8 +65,8 @@ int main(int argc, char* argv[]){
       ("NEvents",   po::value<int>(&nEvents)->default_value(10) ,    "Number of Events ")
       ("Debug",     po::value<int>(&fDebug) ->default_value(0) ,     "Debug flag")
       ("Pileup",    po::value<int>(&pileup)->default_value(20), "Number of Additional Interactions")
-      ("Zspread",   po::value<float>(&zspread)->default_value(50), "Z Spread of Additional Interactions")
-      ("MinEta",   po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
+      ("BunchSize", po::value<float>(&bunchsize)->default_value(50), "Size of Proton Bunches")
+      ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("OutFile",   po::value<string>(&outName)->default_value("test.root"), "output file name")
       ("Proc",      po::value<int>(&proc)->default_value(2), "Process: 1=ZprimeTottbar, 2=WprimeToWZ_lept, 3=WprimeToWZ_had, 4=QCD")
       ("Seed",      po::value<int>(&seed)->default_value(-1), "seed. -1 means random seed")
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]){
    pythia_MB->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */);
 
    // TimingAnalysis
-   TimingAnalysis * analysis = new TimingAnalysis();
+   TimingAnalysis * analysis = new TimingAnalysis(bunchsize);
    analysis->SetOutName(outName);
    analysis->Begin();
    analysis->Debug(fDebug);
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]){
    // Event loop
    for (Int_t iev = 0; iev < nEvents; iev++) {
      if (iev%10==0) std::cout << iev << std::endl;
-     analysis->AnalyzeEvent(iev, pythia8, pythia_MB, pileup, zspread, minEta);
+     analysis->AnalyzeEvent(iev, pythia8, pythia_MB, pileup, minEta);
    }
 
    analysis->End();
