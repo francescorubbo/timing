@@ -28,11 +28,12 @@ class TimingAnalysis{
         TTree *tT;
 	TRandom3* rnd;
 
+	float bunchsize;
+
         // Tree Vars ---------------------------------------
         int              fTEventNumber;
 	int fTNPV;
 	float fzvtxspread;
-	float bunchsize;
 
 	std::vector<float> *jpt;
 	std::vector<float> *jphi;
@@ -49,11 +50,11 @@ class TimingAnalysis{
 	std::vector<float> *truejtime;
 
     public:
-        TimingAnalysis ();
+        TimingAnalysis (float bunchsize_=0.075);
         ~TimingAnalysis ();
         
         void Begin();
-        void AnalyzeEvent(int iEvt, Pythia8::Pythia *pythia8,  Pythia8::Pythia *pythia_MB, int NPV, float zspread, float minEta);
+        void AnalyzeEvent(int iEvt, Pythia8::Pythia *pythia8,  Pythia8::Pythia *pythia_MB, int NPV, float minEta);
         void End();
         void DeclareBranches();
         void ResetBranches();
@@ -67,6 +68,7 @@ class TimingAnalysis{
        	void FillTree(vector<fastjet::PseudoJet> jets);
        	void FillTruthTree(vector<fastjet::PseudoJet> jets);
 
+	std::pair<double,double> GetVtxZandT();
 	double GetIPprob(double zpos, double time);
 	double ComputeTime(fastjet::PseudoJet jet);
 

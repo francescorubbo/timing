@@ -10,6 +10,7 @@
 #include "TParticle.h"
 #include "TDatabasePDG.h"
 #include "TMath.h"
+#include "TF2.h"
 
 #include "TimingAnalysis.h"
 
@@ -29,11 +30,13 @@ const double LIGHTSPEED = 299792458.;
 const double PI  =3.141592653589793238463;
 
 // Constructor 
-TimingAnalysis::TimingAnalysis(){
+TimingAnalysis::TimingAnalysis(float bunchsize_){
     if(fDebug) cout << "TimingAnalysis::TimingAnalysis Start " << endl;
     ftest = 0;
     fDebug = false;
     fOutName = "test.root";
+
+    bunchsize = bunchsize_;
 
     if(fDebug) cout << "TimingAnalysis::TimingAnalysis End " << endl;
     
@@ -98,7 +101,7 @@ void TimingAnalysis::End(){
 }
 
 // Analyze
-void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::Pythia* pythia_MB, int NPV, float zspread,
+void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::Pythia* pythia_MB, int NPV,
 				  float minEta){
 
     if(fDebug) cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
@@ -118,7 +121,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     //Pileup Loop
 
     fTNPV = NPV;
-    fzvtxspread = zspread;
+    fzvtxspread = GetVtxZandT().first;
 
     for (int iPU = 0; iPU <= NPV; ++iPU) {
 
@@ -129,7 +132,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
         if (fabs(pythia_MB->event[i].id())==13) continue;
         if (fabs(pythia_MB->event[i].id())==16) continue;
 	
-	double zvtx = rnd->Gaus(0,zspread)/1000;//convert to meter
+	double zvtx = GetVtxZandT().first;
 	PseudoJet p(pythia_MB->event[i].px(), pythia_MB->event[i].py(), pythia_MB->event[i].pz(),pythia_MB->event[i].e() ); 
 	double eta = p.rapidity();
 	double sinheta = sinh(eta);
@@ -297,8 +300,22 @@ void TimingAnalysis::ResetBranches(){
 
 }
 
-double TimingAnalysis::GetIPprob(double zpos, double time){
+std::pair<double,double> TimingAnalysis::GetVtxZandT(){
+    
+  double maxprob = GetIPprob(0,0);
+  double zpos;
+  double time;
 
-  double ampl = LIGHTSPEED/(PI*bunchsize);
-  return ampl*exp(-( pow(zpos,2) + pow(LIGHTSPEED*time,2) ) / (2*pow(bunchsize,2))); 
+  while(true){
+    zpos = rnd->Uniform(-3*bunchsize,3*bunchsize);
+    time = rnd->Uniform(-3*bunchsize/LIGHTSPEED,3*bunchsize/LIGHTSPEED);
+    if(GetIPprob(zpos,time)>maxprob*rnd->Uniform())
+      break;
+  }
+  return std::make_pair(zpos,time);
+}
+
+double TimingAnalysis::GetIPprob(double zpos, double time){
+  double ampl = LIGHTSPEED/(PI*bunchsize*bunchsize);
+  return ampl*exp(-( pow(zpos,2) + pow(LIGHTSPEED*time,2) ) / (pow(bunchsize,2))); 
 }
