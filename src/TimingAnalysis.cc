@@ -29,14 +29,25 @@ using namespace std;
 const double LIGHTSPEED = 299792458.;
 const double PI  =3.141592653589793238463;
 
+double sgn(double val){
+  if(val < 0)
+    return -1;
+  else if (val > 0)
+    return 1;
+  else
+    return 0;
+}
+
 // Constructor 
-TimingAnalysis::TimingAnalysis(float bunchsize_){
+TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_){
     if(fDebug) cout << "TimingAnalysis::TimingAnalysis Start " << endl;
     ftest = 0;
     fDebug = false;
     fOutName = "test.root";
 
     bunchsize = bunchsize_;
+    randomZ=randomZ_;
+    randomT=randomT_;
 
     if(fDebug) cout << "TimingAnalysis::TimingAnalysis End " << endl;
     
@@ -123,30 +134,46 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     fTNPV = NPV;
     fzvtxspread = GetVtxZandT().first;
 
+    //Loop over Pileup Events
     for (int iPU = 0; iPU <= NPV; ++iPU) {
 
+      //Loop over pileup particles
       for (int i = 0; i < pythia_MB->event.size(); ++i) {
+	//skipping Leptons
         if (!pythia_MB->event[i].isFinal()    ) continue;
         if (fabs(pythia_MB->event[i].id())==12) continue;
         if (fabs(pythia_MB->event[i].id())==14) continue;
         if (fabs(pythia_MB->event[i].id())==13) continue;
         if (fabs(pythia_MB->event[i].id())==16) continue;
 	
-	double zvtx = GetVtxZandT().first;
+	//determine random vertex position in z-t space
+	std::pair<double,double> randomVariates=GetVtxZandT();
+	double zvtx = 0;
+	double tvtx = 0;
+	if(randomZ)
+	  zvtx = randomVariates.first;
+	if(randomT)
+	  tvtx = randomVariates.second;
+	
+	//Instantiate new pseudojet
 	PseudoJet p(pythia_MB->event[i].px(), pythia_MB->event[i].py(), pythia_MB->event[i].pz(),pythia_MB->event[i].e() ); 
+	
+	//extract event information
 	double eta = p.rapidity();
 	double sinheta = sinh(eta);
 	double cosheta = cosh(eta);
+
+	//calculate eta from displacement (minEta pos)
 	double radius = 1.2; // barrel radius=1.2 meter
-	double zbase = radius*sinh(minEta)*eta/fabs(eta);
+	double zbase = radius*sinh(minEta)*eta/fabs(eta); //should eta be minEta?
 	double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
 	if(fabs(corrEta)>5.0) continue;
-	double dist = (zbase-zvtx)*cosheta/sinheta;
-	double time = fabs(dist)/LIGHTSPEED;
 
+	//calculate time measured relative to if event was at 0
+	double dist = (zbase-zvtx)*cosheta/sinheta;
+	double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time?
 	double refdist = zbase*cosh(corrEta)/sinh(corrEta);
 	double reftime = fabs(refdist)/LIGHTSPEED;
-
 	double corrtime = (time-reftime)*1e9;
 	if(fabs(corrEta)<minEta) 
 	  corrtime = -999.;

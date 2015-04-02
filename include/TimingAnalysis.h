@@ -49,8 +49,11 @@ class TimingAnalysis{
 	std::vector<float> *truejeta;
 	std::vector<float> *truejtime;
 
+	bool randomZ;
+	bool randomT;
+
     public:
-        TimingAnalysis (float bunchsize_=0.075);
+        TimingAnalysis (float bunchsize_=0.075, bool randomZ_=true, bool randomT_=false);
         ~TimingAnalysis ();
         
         void Begin();

@@ -58,6 +58,8 @@ int main(int argc, char* argv[]){
     float  boson_mass=1500;
     int    proc      = 4;
     int    seed      =-1;
+    bool   randZ     =true;
+    bool   randT     =false;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -65,7 +67,10 @@ int main(int argc, char* argv[]){
       ("NEvents",   po::value<int>(&nEvents)->default_value(10) ,    "Number of Events ")
       ("Debug",     po::value<int>(&fDebug) ->default_value(0) ,     "Debug flag")
       ("Pileup",    po::value<int>(&pileup)->default_value(20), "Number of Additional Interactions")
-      ("BunchSize", po::value<float>(&bunchsize)->default_value(50), "Size of Proton Bunches")
+      ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
+      ("VaryZ",     "Vary only Z Vertex")
+      ("VaryT",     "Vary only Vertex Time")
+      ("VaryZT",    "Vary both Z and Time of Vertex")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("OutFile",   po::value<string>(&outName)->default_value("test.root"), "output file name")
       ("Proc",      po::value<int>(&proc)->default_value(2), "Process: 1=ZprimeTottbar, 2=WprimeToWZ_lept, 3=WprimeToWZ_had, 4=QCD")
@@ -82,7 +87,25 @@ int main(int argc, char* argv[]){
         cout << desc << "\n";
         return 1;
     }
+    if (vm.count("VaryZ")>0){
+      cout <<"Varying Z of vertex only" << endl;
+      randZ=true;
+      randT=false;
+    }
+    else if (vm.count("VaryT")>0){
+      cout <<"Varying T of vertex only" <<endl;
+      randZ=true;
+      randT=false;
+    }
+    else if ((vm.count("VaryZT")>0) or ((vm.count("VaryZ")>0) and vm.count("VaryT"))){
+      cout <<"Varying Z and T of vertex" <<endl;
+      randZ=true;
+      randT=false;
+    }
+    else
+      
 
+    cout << "BunchSize: " << bunchsize << endl;
 
     //seed 
     seed = getSeed(seed);
@@ -152,7 +175,7 @@ int main(int argc, char* argv[]){
    pythia_MB->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */);
 
    // TimingAnalysis
-   TimingAnalysis * analysis = new TimingAnalysis(bunchsize);
+   TimingAnalysis * analysis = new TimingAnalysis(bunchsize,randZ,randT);
    analysis->SetOutName(outName);
    analysis->Begin();
    analysis->Debug(fDebug);
