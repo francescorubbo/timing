@@ -3,6 +3,7 @@
 [ "$USER" == "pnef" ]     && WorkDir=/u/at/pnef/Work/Code/Reclustering/
 [ "$USER" == "swiatlow" ] && WorkDir=/u/at/swiatlow/nfs/projects/Reclustering/
 [ "$USER" == "rubbo" ]    && WorkDir=/u/at/rubbo/nfs/Timing/trunk/
+[ "$USER" == "kurinsky" ] && WorkDir=/u/at/kurinsky/ATLAS/
 # add similar line if you are not pnef
 
 SubFileLoc=`pwd`/_batchSingleSub.sh
@@ -36,29 +37,34 @@ chmod u+x $SubFileLoc
 #----------------
 Process=4
 bunchsize=0.075
-for mu in 80; do
-    Queue=short
-    nevents=200
-    njobs=50
-    LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_${mu}_
-    OutDirFinal=`pwd`/files/${DateSuffix}
-    mkdir -p `dirname $LogPrefix`
-    mkdir -p $OutDirFinal
-    echo
-    echo "Submitting $njobs jobs each with $nevents events to $Queue"
-    echo $LogPrefix
-    for (( ii=1; ii<=$njobs; ii++ )) ;  do
-        echo $ii
-        OutDir=/scratch/${DateSuffix}_${ii}/
-        bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log $SubFileLoc           \
-            ${WorkDir} ${OutDir} ${OutDirFinal} ./Timing.exe  \
-            --Pileup $mu                 \
-            --OutFile ${OutDir}/Sample_mu_${mu}_nevents_${nevents}_job_${ii}.root \
-            --Proc ${Process} \
-            --NEvents ${nevents} \
-            --BunchSize ${bunchsize} \
-	    --Seed ${ii}
-
+modes="VaryZ VaryT VaryZT"
+for mode in $modes
+do
+    for mu in 80; do
+	Queue=short
+	nevents=200
+	njobs=50
+	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_${mu}_${mode}_
+	OutDirFinal=`pwd`/files/${DateSuffix}
+	mkdir -p `dirname $LogPrefix`
+	mkdir -p $OutDirFinal
+	echo
+	echo "Submitting $njobs jobs each with $nevents events to $Queue"
+	echo $LogPrefix
+	for (( ii=1; ii<=$njobs; ii++ )) ;  do
+            echo $ii
+            OutDir=/scratch/${DateSuffix}_${ii}/
+            bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log $SubFileLoc           \
+		${WorkDir} ${OutDir} ${OutDirFinal} Timing.sh  \
+		--Pileup $mu                 \
+		--OutFile ${OutDir}/Sample_mu_${mu}_${mode}_nevents_${nevents}_job_${ii}.root \
+		--Proc ${Process} \
+		--NEvents ${nevents} \
+		--BunchSize ${bunchsize} \
+		--Seed ${ii} \
+		--${mode}
+	    
+	done
     done
 done
 
