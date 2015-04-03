@@ -42,7 +42,7 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 
 clean:
 	rm -rf Timing
-	rm -rf lib/*.so
+	rm -rf lib
 	rm -f *~
 
 install:
