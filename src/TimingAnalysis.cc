@@ -40,17 +40,23 @@ double sgn(double val){
 
 // Constructor 
 TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_){
-    if(fDebug) cout << "TimingAnalysis::TimingAnalysis Start " << endl;
+
+    fDebug=false;
+
+    if(fDebug) 
+      cout << "TimingAnalysis::TimingAnalysis Start " << endl;
     ftest = 0;
-    fDebug = false;
     fOutName = "test.root";
 
     bunchsize = bunchsize_;
     randomZ=randomZ_;
     randomT=randomT_;
 
-    if(fDebug) cout << "TimingAnalysis::TimingAnalysis End " << endl;
-    
+    if(fDebug) 
+      cout << "TimingAnalysis::TimingAnalysis End " << endl;
+
+    //suppress fastjet banner
+    fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
 }
 
 // Destructor 
@@ -115,11 +121,13 @@ void TimingAnalysis::End(){
 void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::Pythia* pythia_MB, int NPV,
 				  float minEta){
 
-    if(fDebug) cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
+    if(fDebug) 
+      cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
 
     // -------------------------
     if (!pythia8->next()) return;
-    if(fDebug) cout << "TimingAnalysis::AnalyzeEvent Event Number " << ievt << endl;
+    if(fDebug) 
+      cout << "TimingAnalysis::AnalyzeEvent Event Number " << ievt << endl;
 
     // reset branches 
     ResetBranches();
@@ -231,7 +239,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 
     tT->Fill();
 
-    if(fDebug) cout << "TimingAnalysis::AnalyzeEvent End " << endl;
+    if(fDebug) 
+      cout << "TimingAnalysis::AnalyzeEvent End " << endl;
+
     return;
 }
 

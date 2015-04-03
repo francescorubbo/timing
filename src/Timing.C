@@ -10,7 +10,6 @@
 #include "TString.h"
 #include "TSystem.h"
 #include "TError.h"
-//#include "TPythia8.h"
 #include "TClonesArray.h"
 #include "TParticle.h"
 #include "TDatabasePDG.h"
@@ -32,6 +31,9 @@ using std::map;
 using namespace std;
 namespace po = boost::program_options;
 
+void printBanner();
+void printOptions(po::variables_map vm);
+
 int getSeed(int seed){                                                                                                                                                                                                                                              
     if (seed > -1) return seed;                                                                                                                                                                                                                                  
     int timeSeed = time(NULL);                                                                                                                                                                                                                                         
@@ -39,14 +41,7 @@ int getSeed(int seed){
 }  
 
 int main(int argc, char* argv[]){
-    // argument parsing  ------------------------
-    cout << "Called as: ";
-    for(int ii=0; ii<argc; ++ii){
-        cout << argv[ii] << " ";
-    }
-    cout << endl;
-
-    // agruments 
+    // arguments 
     string outName   = "Timing.root";
     int    pileup    = 0;
     float  bunchsize = 0.075;
@@ -72,7 +67,7 @@ int main(int argc, char* argv[]){
       ("VaryT",     "Vary only Vertex Time")
       ("VaryZT",    "Vary both Z and Time of Vertex")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
-      ("OutFile",   po::value<string>(&outName)->default_value("test.root"), "output file name")
+      ("OutFile",   po::value<string>(&outName)->default_value("Timing.root"), "output file name")
       ("Proc",      po::value<int>(&proc)->default_value(2), "Process: 1=ZprimeTottbar, 2=WprimeToWZ_lept, 3=WprimeToWZ_had, 4=QCD")
       ("Seed",      po::value<int>(&seed)->default_value(-1), "seed. -1 means random seed")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
@@ -87,6 +82,12 @@ int main(int argc, char* argv[]){
         cout << desc << "\n";
         return 1;
     }
+    else{
+      printBanner();
+      printOptions(vm);
+    }
+
+    cout << "\t";
     if (vm.count("VaryZ")>0){
       cout <<"Varying Z of vertex only" << endl;
       randZ=true;
@@ -94,27 +95,30 @@ int main(int argc, char* argv[]){
     }
     else if (vm.count("VaryT")>0){
       cout <<"Varying T of vertex only" <<endl;
-      randZ=true;
-      randT=false;
+      randZ=false;
+      randT=true;
     }
     else if ((vm.count("VaryZT")>0) or ((vm.count("VaryZ")>0) and vm.count("VaryT"))){
       cout <<"Varying Z and T of vertex" <<endl;
       randZ=true;
-      randT=false;
+      randT=true;
     }
-    else
-      
-
-    cout << "BunchSize: " << bunchsize << endl;
+    else{
+      cout <<"Varying Z of vertex only" << endl;
+    }
+    cout << endl;
 
     //seed 
     seed = getSeed(seed);
 
     // Configure and initialize pythia
-    Pythia8::Pythia* pythia8 = new Pythia8::Pythia();
+    Pythia8::Pythia* pythia8 = new Pythia8::Pythia("../xmldoc",false);
+    pythia8->readString("Print:quiet=on");
     pythia8->readString("Random:setSeed = on"); 
-    std::stringstream ss; ss << "Random:seed = " << seed;
-    cout << ss.str() << endl; 
+    std::stringstream ss; 
+    ss << "Random:seed = " << seed;
+    if(fDebug)
+      cout << ss.str() << endl; 
     pythia8->readString(ss.str());
 
    if(proc ==1){
@@ -163,11 +167,15 @@ int main(int argc, char* argv[]){
    }else{ throw std::invalid_argument("received invalid 'process'");}
 
    //Setup the pileup
-   Pythia8::Pythia* pythia_MB = new Pythia8::Pythia();
+   Pythia8::Pythia* pythia_MB = new Pythia8::Pythia("../xmldoc",false);
    pythia_MB->readString("Random:setSeed = on");   
-   ss.clear(); ss.str(""); ss << "Random:seed = " << seed+1; 
-   cout << ss.str() << endl; 
+   ss.clear(); 
+   ss.str(""); 
+   ss << "Random:seed = " << seed+1; 
+   if(fDebug)
+     cout << ss.str() << endl; 
    pythia_MB->readString(ss.str());
+   pythia_MB->readString("Print:quiet=on");
    pythia_MB->readString("SoftQCD:nonDiffractive = on");
    pythia_MB->readString("HardQCD:all = off");
    pythia_MB->readString("PhaseSpace:pTHatMin  = .1");
@@ -180,19 +188,57 @@ int main(int argc, char* argv[]){
    analysis->Begin();
    analysis->Debug(fDebug);
 
-   std::cout << pileup << " is the number of pileu pevents " << std::endl;
+   std::cout << "Number of Pileup Events: " << pileup << std::endl;
 
    // Event loop
+   cout << "Progress:" << endl;
    for (Int_t iev = 0; iev < nEvents; iev++) {
-     if (iev%10==0) std::cout << iev << std::endl;
+     if (iev%20==0)
+       cout << "\tCurrent: " << iev << endl;
      analysis->AnalyzeEvent(iev, pythia8, pythia_MB, pileup, minEta);
    }
 
    analysis->End();
+   cout << "Timing Analysis Complete!" << endl;
 
    // that was it
    delete pythia8;
+   delete pythia_MB;
    delete analysis;
 
    return 0;
+}
+
+void printBanner(){
+  cout << endl << "=================================================================" << endl;
+  cout << "=                        Timing Analysis                        =" << endl;
+  cout << "=================================================================" << endl << endl;
+}
+
+void printOptions(po::variables_map vm){
+  cout << "Settings:" << endl;
+  for (po::variables_map::const_iterator itr=vm.begin();itr != vm.end();++itr){
+    printf("%15s\t",itr->first.c_str());
+    if((itr->first == "VaryT") or (itr->first == "VaryZ") or (itr->first == "VaryZT")){
+      cout << endl;
+      continue;
+    }
+
+    try { 
+      cout << "= " << itr->second.as<double>() << std::endl;
+      continue;
+    } catch(...) {/* do nothing */ }
+    try { 
+      cout << "= " << itr->second.as<float>() << std::endl;
+      continue;
+    } catch(...) {/* do nothing */ }
+    try { 
+      cout << "= " << itr->second.as<int>() << std::endl;
+      continue;
+    } catch(...) {/* do nothing */ }
+    try { 
+      cout << "= " << itr->second.as<std::string>() << std::endl;
+      continue;
+    } catch(...) {/* do nothing */ }
+  }
 }

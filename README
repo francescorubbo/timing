@@ -1,6 +1,17 @@
 ----- How To ----
-1.) source setup.sh
-2.) make
-3.) ./Timing.exe --help
 
+Install:
+	1.) source setupTiming.sh
+	2.) make
+	3.) make install (moves to ~/local/bin)
+	4.) Timing --help
 
+Install adds Timing.sh, which sets up environment:
+Run (with setup):
+    	1.) Add ~/local/bin to path
+	2.) source setupTiming.sh
+	3.) Timing --help
+
+Run (without setup):
+    	1.) Add ~/local/bin to path
+	2.) Timing.sh --help
