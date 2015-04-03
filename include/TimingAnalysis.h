@@ -34,6 +34,7 @@ class TimingAnalysis{
         int              fTEventNumber;
 	int fTNPV;
 	float fzvtxspread;
+	float ftvtxspread;
 
 	std::vector<float> *jpt;
 	std::vector<float> *jphi;

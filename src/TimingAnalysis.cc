@@ -140,7 +140,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     //Pileup Loop
 
     fTNPV = NPV;
-    fzvtxspread = GetVtxZandT().first;
+    std::pair<double,double> randomVariates=GetVtxZandT();  
+    fzvtxspread = randomVariates.first;
+    ftvtxspread = randomVariates.second;
 
     //Loop over Pileup Events
     for (int iPU = 0; iPU <= NPV; ++iPU) {
@@ -155,7 +157,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
         if (fabs(pythia_MB->event[i].id())==16) continue;
 	
 	//determine random vertex position in z-t space
-	std::pair<double,double> randomVariates=GetVtxZandT();
+	randomVariates=GetVtxZandT();
 	double zvtx = 0;
 	double tvtx = 0;
 	if(randomZ)
@@ -173,13 +175,13 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 
 	//calculate eta from displacement (minEta pos)
 	double radius = 1.2; // barrel radius=1.2 meter
-	double zbase = radius*sinh(minEta)*eta/fabs(eta); //should eta be minEta?
+	double zbase = radius*sinh(minEta)*sgn(eta); //should eta be minEta?
 	double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
 	if(fabs(corrEta)>5.0) continue;
 
 	//calculate time measured relative to if event was at 0
 	double dist = (zbase-zvtx)*cosheta/sinheta;
-	double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time?
+	double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
 	double refdist = zbase*cosh(corrEta)/sinh(corrEta);
 	double reftime = fabs(refdist)/LIGHTSPEED;
 	double corrtime = (time-reftime)*1e9;
@@ -295,9 +297,10 @@ void TimingAnalysis::DeclareBranches(){
 
   gROOT->ProcessLine("#include <vector>");
   
-  tT->Branch("EventNumber",               &fTEventNumber,            "EventNumber/I");
-  tT->Branch("NPV",               &fTNPV,            "NPV/I");
-  tT->Branch("zvtxspread",               &fzvtxspread,            "zvtxspread/F");
+  tT->Branch("EventNumber",&fTEventNumber,"EventNumber/I");
+  tT->Branch("NPV",&fTNPV,"NPV/I");
+  tT->Branch("zvtxspread",&fzvtxspread,"zvtxspread/F");
+  tT->Branch("tvtxspread",&ftvtxspread,"tvtxspread/F"); 
   tT->Branch("jpt","std::vector<float>",&jpt);
   tT->Branch("jphi","std::vector<float>",&jphi);
   tT->Branch("jeta","std::vector<float>",&jeta);
@@ -311,8 +314,8 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("truejphi","std::vector<float>",&truejphi);
   tT->Branch("truejeta","std::vector<float>",&truejeta);
   tT->Branch("truejtime","std::vector<float>",&truejtime);
-
-   return;
+  
+  return;
 }
 
 // resets vars
@@ -321,6 +324,7 @@ void TimingAnalysis::ResetBranches(){
       fTEventNumber                 = -999;
       fTNPV = -1;
       fzvtxspread = -1;
+      ftvtxspread = -1;
 
       jpt->clear();
       jphi->clear();
