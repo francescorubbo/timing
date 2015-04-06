@@ -9,10 +9,13 @@ CXXFLAGS =   -O2 -Wall
 
 .PHONY: clean debug all
 
-all: Timing
+all: setup Timing
+
+setup:
+	mkdir -p lib
 
 Timing:  lib/Timing.so lib/TimingAnalysis.so
-	$(CXX) lib/Timing.so lib/TimingAnalysis.so -o $@.exe \
+	$(CXX) lib/Timing.so lib/TimingAnalysis.so -o $@ \
 	$(CXXFLAGS) -Wno-shadow  \
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
@@ -38,6 +41,11 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 	`root-config --cflags --libs` 
 
 clean:
-	rm -rf *.exe
-	rm -rf lib/*.so
+	rm -rf Timing
+	rm -rf lib
 	rm -f *~
+
+install:
+	install Timing -t ${HOME}/local/bin
+	install setupTiming.sh -t ${HOME}/local/bin
+	install scripts/Timing.sh -t ${HOME}/local/bin

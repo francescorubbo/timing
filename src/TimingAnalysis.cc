@@ -29,17 +29,34 @@ using namespace std;
 const double LIGHTSPEED = 299792458.;
 const double PI  =3.141592653589793238463;
 
+double sgn(double val){
+  if(val < 0)
+    return -1;
+  else if (val > 0)
+    return 1;
+  else
+    return 0;
+}
+
 // Constructor 
-TimingAnalysis::TimingAnalysis(float bunchsize_){
-    if(fDebug) cout << "TimingAnalysis::TimingAnalysis Start " << endl;
+TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_){
+
+    fDebug=false;
+
+    if(fDebug) 
+      cout << "TimingAnalysis::TimingAnalysis Start " << endl;
     ftest = 0;
-    fDebug = false;
     fOutName = "test.root";
 
     bunchsize = bunchsize_;
+    randomZ=randomZ_;
+    randomT=randomT_;
 
-    if(fDebug) cout << "TimingAnalysis::TimingAnalysis End " << endl;
-    
+    if(fDebug) 
+      cout << "TimingAnalysis::TimingAnalysis End " << endl;
+
+    //suppress fastjet banner
+    fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
 }
 
 // Destructor 
@@ -104,11 +121,13 @@ void TimingAnalysis::End(){
 void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::Pythia* pythia_MB, int NPV,
 				  float minEta){
 
-    if(fDebug) cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
+    if(fDebug) 
+      cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
 
     // -------------------------
     if (!pythia8->next()) return;
-    if(fDebug) cout << "TimingAnalysis::AnalyzeEvent Event Number " << ievt << endl;
+    if(fDebug) 
+      cout << "TimingAnalysis::AnalyzeEvent Event Number " << ievt << endl;
 
     // reset branches 
     ResetBranches();
@@ -121,32 +140,50 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     //Pileup Loop
 
     fTNPV = NPV;
-    fzvtxspread = GetVtxZandT().first;
+    std::pair<double,double> randomVariates=GetVtxZandT();  
+    fzvtxspread = randomVariates.first;
+    ftvtxspread = randomVariates.second;
 
+    //Loop over Pileup Events
     for (int iPU = 0; iPU <= NPV; ++iPU) {
 
+      //Loop over pileup particles
       for (int i = 0; i < pythia_MB->event.size(); ++i) {
+	//skipping Leptons
         if (!pythia_MB->event[i].isFinal()    ) continue;
         if (fabs(pythia_MB->event[i].id())==12) continue;
         if (fabs(pythia_MB->event[i].id())==14) continue;
         if (fabs(pythia_MB->event[i].id())==13) continue;
         if (fabs(pythia_MB->event[i].id())==16) continue;
 	
-	double zvtx = GetVtxZandT().first;
+	//determine random vertex position in z-t space
+	randomVariates=GetVtxZandT();
+	double zvtx = 0;
+	double tvtx = 0;
+	if(randomZ)
+	  zvtx = randomVariates.first;
+	if(randomT)
+	  tvtx = randomVariates.second;
+	
+	//Instantiate new pseudojet
 	PseudoJet p(pythia_MB->event[i].px(), pythia_MB->event[i].py(), pythia_MB->event[i].pz(),pythia_MB->event[i].e() ); 
+	
+	//extract event information
 	double eta = p.rapidity();
 	double sinheta = sinh(eta);
 	double cosheta = cosh(eta);
+
+	//calculate eta from displacement (minEta pos)
 	double radius = 1.2; // barrel radius=1.2 meter
-	double zbase = radius*sinh(minEta)*eta/fabs(eta);
+	double zbase = radius*sinh(minEta)*sgn(eta); //should eta be minEta?
 	double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
 	if(fabs(corrEta)>5.0) continue;
-	double dist = (zbase-zvtx)*cosheta/sinheta;
-	double time = fabs(dist)/LIGHTSPEED;
 
+	//calculate time measured relative to if event was at 0
+	double dist = (zbase-zvtx)*cosheta/sinheta;
+	double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
 	double refdist = zbase*cosh(corrEta)/sinh(corrEta);
 	double reftime = fabs(refdist)/LIGHTSPEED;
-
 	double corrtime = (time-reftime)*1e9;
 	if(fabs(corrEta)<minEta) 
 	  corrtime = -999.;
@@ -204,7 +241,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 
     tT->Fill();
 
-    if(fDebug) cout << "TimingAnalysis::AnalyzeEvent End " << endl;
+    if(fDebug) 
+      cout << "TimingAnalysis::AnalyzeEvent End " << endl;
+
     return;
 }
 
@@ -258,9 +297,10 @@ void TimingAnalysis::DeclareBranches(){
 
   gROOT->ProcessLine("#include <vector>");
   
-  tT->Branch("EventNumber",               &fTEventNumber,            "EventNumber/I");
-  tT->Branch("NPV",               &fTNPV,            "NPV/I");
-  tT->Branch("zvtxspread",               &fzvtxspread,            "zvtxspread/F");
+  tT->Branch("EventNumber",&fTEventNumber,"EventNumber/I");
+  tT->Branch("NPV",&fTNPV,"NPV/I");
+  tT->Branch("zvtxspread",&fzvtxspread,"zvtxspread/F");
+  tT->Branch("tvtxspread",&ftvtxspread,"tvtxspread/F"); 
   tT->Branch("jpt","std::vector<float>",&jpt);
   tT->Branch("jphi","std::vector<float>",&jphi);
   tT->Branch("jeta","std::vector<float>",&jeta);
@@ -274,8 +314,8 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("truejphi","std::vector<float>",&truejphi);
   tT->Branch("truejeta","std::vector<float>",&truejeta);
   tT->Branch("truejtime","std::vector<float>",&truejtime);
-
-   return;
+  
+  return;
 }
 
 // resets vars
@@ -284,6 +324,7 @@ void TimingAnalysis::ResetBranches(){
       fTEventNumber                 = -999;
       fTNPV = -1;
       fzvtxspread = -1;
+      ftvtxspread = -1;
 
       jpt->clear();
       jphi->clear();
