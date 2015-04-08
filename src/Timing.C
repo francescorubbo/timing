@@ -55,6 +55,7 @@ int main(int argc, char* argv[]){
     int    seed      =-1;
     bool   randZ     =true;
     bool   randT     =false;
+    bool   smearHS   =false;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -63,9 +64,10 @@ int main(int argc, char* argv[]){
       ("Debug",     po::value<int>(&fDebug) ->default_value(0) ,     "Debug flag")
       ("Pileup",    po::value<int>(&pileup)->default_value(20), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
-      ("VaryZ",     "Vary only Z Vertex")
-      ("VaryT",     "Vary only Vertex Time")
-      ("VaryZT",    "Vary both Z and Time of Vertex")
+      ("VaryZ",     "Vary only Z Vertex of Pileup")
+      ("VaryT",     "Vary only Vertex Time of Pileup")
+      ("VaryZT",    "Vary both Z and Time of Vertex of Pileup")
+      ("SmearHS",   "Smear Hard Scatter Vertex in Time")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("OutFile",   po::value<string>(&outName)->default_value("Timing.root"), "output file name")
       ("Proc",      po::value<int>(&proc)->default_value(2), "Process: 1=ZprimeTottbar, 2=WprimeToWZ_lept, 3=WprimeToWZ_had, 4=QCD")
@@ -88,23 +90,33 @@ int main(int argc, char* argv[]){
     }
 
     cout << "\t";
+    if (vm.count("SmearHS")>0){
+      cout <<"Smearing Hard-Scatter Timing" << endl;
+      smearHS=true;
+    }
+    else
+      cout <<"No Hard-Scatter Smearing" << endl;
+    cout << endl;
+
+    cout << "\t";
     if (vm.count("VaryZ")>0){
-      cout <<"Varying Z of vertex only" << endl;
+      cout <<"Varying Z of Pileup vertex" << endl;
       randZ=true;
       randT=false;
     }
     else if (vm.count("VaryT")>0){
-      cout <<"Varying T of vertex only" <<endl;
+      cout <<"Varying T of Pileup vertex" <<endl;
       randZ=false;
       randT=true;
     }
     else if ((vm.count("VaryZT")>0) or ((vm.count("VaryZ")>0) and vm.count("VaryT"))){
-      cout <<"Varying Z and T of vertex" <<endl;
+      cout <<"Varying Z and T of Pileup vertex" <<endl;
       randZ=true;
       randT=true;
     }
     else{
-      cout <<"Varying Z of vertex only" << endl;
+      cout <<"No Pileup Smearing" << endl;
+      
     }
     cout << endl;
 

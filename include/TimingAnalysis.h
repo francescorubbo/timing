@@ -44,6 +44,7 @@ class TimingAnalysis{
 	std::vector<float> *j0clphi;
 	std::vector<float> *j0cleta;
 	std::vector<float> *j0cltime;
+	std::vector<float> *j0cltruth;
 
 	std::vector<float> *truejpt;
 	std::vector<float> *truejphi;

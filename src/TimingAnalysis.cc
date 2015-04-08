@@ -82,6 +82,7 @@ void TimingAnalysis::Begin(){
    j0clphi = new vector<float>();  
    j0cleta = new vector<float>();  
    j0cltime = new vector<float>();  
+   j0cltruth = new vector<float>();
 
    truejpt = new vector<float>();  
    truejphi = new vector<float>();  
@@ -108,6 +109,7 @@ void TimingAnalysis::End(){
     delete j0clphi;
     delete j0cleta;
     delete j0cltime;
+    delete j0cltruth;
 
     delete truejpt;
     delete truejphi;
@@ -147,6 +149,15 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     //Loop over Pileup Events
     for (int iPU = 0; iPU <= NPV; ++iPU) {
 
+      //determine random vertex position in z-t space                                                                                                                                                     
+      randomVariates=GetVtxZandT();
+      double zvtx = 0;
+      double tvtx = 0;
+      if(randomZ)
+	zvtx = randomVariates.first;
+      if(randomT)
+	tvtx = randomVariates.second;
+      
       //Loop over pileup particles
       for (int i = 0; i < pythia_MB->event.size(); ++i) {
 	//skipping Leptons
@@ -155,15 +166,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
         if (fabs(pythia_MB->event[i].id())==14) continue;
         if (fabs(pythia_MB->event[i].id())==13) continue;
         if (fabs(pythia_MB->event[i].id())==16) continue;
-	
-	//determine random vertex position in z-t space
-	randomVariates=GetVtxZandT();
-	double zvtx = 0;
-	double tvtx = 0;
-	if(randomZ)
-	  zvtx = randomVariates.first;
-	if(randomT)
-	  tvtx = randomVariates.second;
 	
 	//Instantiate new pseudojet
 	PseudoJet p(pythia_MB->event[i].px(), pythia_MB->event[i].py(), pythia_MB->event[i].pz(),pythia_MB->event[i].e() ); 
@@ -195,6 +197,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
       }
       if (!pythia_MB->next()) continue;
     }
+
+    //determine random vertex position in z-t space                                                                                                                                                       
+    double tvtx=GetVtxZandT().second;
    
     // Particle loop -----------------------------------------------------------
     for (int ip=0; ip<pythia8->event.size(); ++ip){
@@ -205,11 +210,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
       if (fabs(pythia8->event[ip].id())  ==13) continue;
       if (fabs(pythia8->event[ip].id())  ==14) continue;
       if (fabs(pythia8->event[ip].id())  ==16) continue;
-      
+
       fastjet::PseudoJet p(pythia8->event[ip].px(), pythia8->event[ip].py(), pythia8->event[ip].pz(),pythia8->event[ip].e() ); 
       double eta = p.rapidity();
       if (fabs(eta)>5.0) continue;
-      double corrtime = 0.;
+      double corrtime = tvtx*1e9;
       if (fabs(eta)<minEta) corrtime = -999.;
       p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
       p.set_user_info(new TimingInfo(pythia8->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
@@ -263,6 +268,7 @@ void TimingAnalysis::FillTree(vector<fastjet::PseudoJet> jets){
       j0clphi->push_back(jets[0].constituents()[icl].phi());
       j0cleta->push_back(jets[0].constituents()[icl].eta());
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
+      j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 1.0 : 0.0);
     }  
 }
 
@@ -309,6 +315,7 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0clphi","std::vector<float>",&j0clphi);
   tT->Branch("j0cleta","std::vector<float>",&j0cleta);
   tT->Branch("j0cltime","std::vector<float>",&j0cltime);
+  tT->Branch("j0cltruth","std::vector<float>",&j0cltruth);
 
   tT->Branch("truejpt", "std::vector<float>",&truejpt);
   tT->Branch("truejphi","std::vector<float>",&truejphi);
@@ -334,6 +341,7 @@ void TimingAnalysis::ResetBranches(){
       j0clphi->clear();
       j0cleta->clear();
       j0cltime->clear();
+      j0cltruth->clear();
       truejpt->clear();
       truejphi->clear();
       truejeta->clear();

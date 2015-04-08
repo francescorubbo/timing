@@ -3,7 +3,7 @@
 [ "$USER" == "pnef" ]     && WorkDir=/u/at/pnef/Work/Code/Reclustering/
 [ "$USER" == "swiatlow" ] && WorkDir=/u/at/swiatlow/nfs/projects/Reclustering/
 [ "$USER" == "rubbo" ]    && WorkDir=/u/at/rubbo/nfs/Timing/trunk/
-[ "$USER" == "kurinsky" ] && WorkDir=/u/at/kurinsky/ATLAS/
+[ "$USER" == "kurinsky" ] && WorkDir=/u/ki/kurinsky/ATLAS/
 # add similar line if you are not pnef
 
 SubFileLoc=`pwd`/_batchSingleSub.sh
