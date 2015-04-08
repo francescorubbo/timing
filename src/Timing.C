@@ -57,25 +57,35 @@ int main(int argc, char* argv[]){
     bool   randT     =false;
     bool   smearHS   =false;
 
-    po::options_description desc("Allowed options");
+    po::options_description gen_desc("Allowed options");
     desc.add_options()
       ("help", "produce help message")
-      ("NEvents",   po::value<int>(&nEvents)->default_value(10) ,    "Number of Events ")
       ("Debug",     po::value<int>(&fDebug) ->default_value(0) ,     "Debug flag")
-      ("Pileup",    po::value<int>(&pileup)->default_value(20), "Number of Additional Interactions")
-      ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
+      ("OutFile",   po::value<string>(&outName)->default_value("Timing.root"), "output file name")
+      ("Seed",      po::value<int>(&seed)->default_value(-1), "seed. -1 means random seed");
+
+    po::options_description sim_flag("Simulation Flags");
+    desc.add_options()
       ("VaryZ",     "Vary only Z Vertex of Pileup")
       ("VaryT",     "Vary only Vertex Time of Pileup")
       ("VaryZT",    "Vary both Z and Time of Vertex of Pileup")
-      ("SmearHS",   "Smear Hard Scatter Vertex in Time")
+      ("SmearHS",   "Smear Hard Scatter Vertex in Time");
+
+    po::options_description sim_desc("Simulation Settings");
+    desc.add_options()
+      ("NEvents",   po::value<int>(&nEvents)->default_value(10) ,    "Number of Events ")
+      ("Pileup",    po::value<int>(&pileup)->default_value(20), "Number of Additional Interactions")
+      ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
-      ("OutFile",   po::value<string>(&outName)->default_value("Timing.root"), "output file name")
       ("Proc",      po::value<int>(&proc)->default_value(2), "Process: 1=ZprimeTottbar, 2=WprimeToWZ_lept, 3=WprimeToWZ_had, 4=QCD")
-      ("Seed",      po::value<int>(&seed)->default_value(-1), "seed. -1 means random seed")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
       ("BosonMass", po::value<float>(&boson_mass)->default_value(1500), "Z' or W' mass in GeV")
       ;
+
+    po::options_description desc;
+    desc.add(gen_desc).add(sim_flag).add(sim_desc);
+
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
