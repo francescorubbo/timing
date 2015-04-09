@@ -58,26 +58,26 @@ int main(int argc, char* argv[]){
     bool   smearHS   =false;
 
     po::options_description gen_desc("Allowed options");
-    desc.add_options()
+    gen_desc.add_options()
       ("help", "produce help message")
       ("Debug",     po::value<int>(&fDebug) ->default_value(0) ,     "Debug flag")
       ("OutFile",   po::value<string>(&outName)->default_value("Timing.root"), "output file name")
       ("Seed",      po::value<int>(&seed)->default_value(-1), "seed. -1 means random seed");
 
     po::options_description sim_flag("Simulation Flags");
-    desc.add_options()
+    sim_flag.add_options()
       ("VaryZ",     "Vary only Z Vertex of Pileup")
       ("VaryT",     "Vary only Vertex Time of Pileup")
       ("VaryZT",    "Vary both Z and Time of Vertex of Pileup")
       ("SmearHS",   "Smear Hard Scatter Vertex in Time");
 
     po::options_description sim_desc("Simulation Settings");
-    desc.add_options()
-      ("NEvents",   po::value<int>(&nEvents)->default_value(10) ,    "Number of Events ")
-      ("Pileup",    po::value<int>(&pileup)->default_value(20), "Number of Additional Interactions")
+    sim_desc.add_options()
+      ("NEvents",   po::value<int>(&nEvents)->default_value(1) ,    "Number of Events ")
+      ("Pileup",    po::value<int>(&pileup)->default_value(0), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
-      ("Proc",      po::value<int>(&proc)->default_value(2), "Process: 1=ZprimeTottbar, 2=WprimeToWZ_lept, 3=WprimeToWZ_had, 4=QCD")
+      ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
       ("BosonMass", po::value<float>(&boson_mass)->default_value(1500), "Z' or W' mass in GeV")
@@ -106,8 +106,7 @@ int main(int argc, char* argv[]){
     }
     else
       cout <<"No Hard-Scatter Smearing" << endl;
-    cout << endl;
-
+    
     cout << "\t";
     if (vm.count("VaryZ")>0){
       cout <<"Varying Z of Pileup vertex" << endl;
