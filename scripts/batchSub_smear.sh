@@ -36,9 +36,9 @@ chmod u+x $SubFileLoc
 
 #----------------
 Process=4
-bunchsize=0.075
-modes="VaryZ VaryT VaryZT"
-for mode in $modes
+bunchsizes="0.10 0.125"
+mode="VaryZT"
+for bunchsize in $bunchsizes
 do
     for mu in 80; do
 	Queue=short
@@ -70,4 +70,3 @@ do
 	done
     done
 done
-

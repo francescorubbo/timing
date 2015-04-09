@@ -5,7 +5,7 @@
 [ "$USER" == "rubbo" ]    && WorkDir=/u/at/rubbo/nfs/Timing/trunk/
 [ "$USER" == "kurinsky" ] && WorkDir=/u/ki/kurinsky/ATLAS/
 # add similar line if you are not pnef
-
+ 
 SubFileLoc=`pwd`/_batchSingleSub.sh
 DateSuffix=`date +%Y%m%d_%Hh%Mmin`
 
@@ -40,9 +40,9 @@ chmod u+x $SubFileLoc
 
 #----------------
 Process=4
-bunchsize=0.075
-modes="VaryZ VaryT VaryZT"
-for mode in $modes
+bunchsizes="0.10 0.125"
+mode="VaryZT"
+for bunchsize in $bunchsizes
 do
     for mu in 80; do
 	Queue=short
