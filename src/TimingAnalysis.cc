@@ -13,8 +13,8 @@
 #include "TF2.h"
 
 #include "TimingAnalysis.h"
-
 #include "TimingInfo.h"
+
 #include "fastjet/PseudoJet.hh"  
 #include "fastjet/Selector.hh"
 #include "fastjet/ClusterSequenceArea.hh"
@@ -39,7 +39,7 @@ double sgn(double val){
 }
 
 // Constructor 
-TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_){
+TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_, bool smear_){
 
     fDebug=false;
 
@@ -51,6 +51,7 @@ TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_){
     bunchsize = bunchsize_;
     randomZ=randomZ_;
     randomT=randomT_;
+    smear=smear_;
 
     if(fDebug) 
       cout << "TimingAnalysis::TimingAnalysis End " << endl;
@@ -64,11 +65,11 @@ TimingAnalysis::~TimingAnalysis(){
 }
 
 // Begin method
-void TimingAnalysis::Begin(){
+void TimingAnalysis::Begin(int seed){
    // Declare TTree
    tF = new TFile(fOutName.c_str(), "RECREATE");
    tT = new TTree("tree", "Event Tree for Timing");
-   rnd = new TRandom3(123);
+   rnd = new TRandom3(seed);
 
    // for shit you want to do by hand
    DeclareBranches();
@@ -142,7 +143,8 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     //Pileup Loop
 
     fTNPV = NPV;
-    std::pair<double,double> randomVariates=GetVtxZandT();  
+    std::pair<double,double> randomVariates;  
+    randomVariates=GetVtxZandT();
     fzvtxspread = randomVariates.first;
     ftvtxspread = randomVariates.second;
 
@@ -160,6 +162,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
       
       //Loop over pileup particles
       for (int i = 0; i < pythia_MB->event.size(); ++i) {
+
 	//skipping Leptons
         if (!pythia_MB->event[i].isFinal()    ) continue;
         if (fabs(pythia_MB->event[i].id())==12) continue;
@@ -198,8 +201,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
       if (!pythia_MB->next()) continue;
     }
 
-    //determine random vertex position in z-t space                                                                                                                                                       
-    double tvtx=GetVtxZandT().second;
+    //determine random vertex position in z-t space                                                                                                                             
+
+    double tvtx=0.0;
+    if(smear)
+      tvtx=GetVtxZandT().second;
    
     // Particle loop -----------------------------------------------------------
     for (int ip=0; ip<pythia8->event.size(); ++ip){
@@ -296,7 +302,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet){
   return time;
 }
 
-// declate branches
+// declare branches
 void TimingAnalysis::DeclareBranches(){
    
    // Event Properties 

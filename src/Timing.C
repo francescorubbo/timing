@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <stdio.h>
+#include <memory>
 
 #include "TString.h"
 #include "TSystem.h"
@@ -24,10 +25,6 @@
 
 #include "boost/program_options.hpp"
 
-using std::cout;
-using std::endl;
-using std::string;
-using std::map;
 using namespace std;
 namespace po = boost::program_options;
 
@@ -62,7 +59,7 @@ int main(int argc, char* argv[]){
       ("help", "produce help message")
       ("Debug",     po::value<int>(&fDebug) ->default_value(0) ,     "Debug flag")
       ("OutFile",   po::value<string>(&outName)->default_value("Timing.root"), "output file name")
-      ("Seed",      po::value<int>(&seed)->default_value(-1), "seed. -1 means random seed");
+      ("Seed",      po::value<int>(&seed)->default_value(-1), "Seed. -1 means random seed");
 
     po::options_description sim_flag("Simulation Flags");
     sim_flag.add_options()
@@ -125,15 +122,16 @@ int main(int argc, char* argv[]){
     }
     else{
       cout <<"No Pileup Smearing" << endl;
-      
+      randZ=false;
+      randT=false;
     }
     cout << endl;
-
+    
     //seed 
     seed = getSeed(seed);
-
+    
     // Configure and initialize pythia
-    Pythia8::Pythia* pythia8 = new Pythia8::Pythia("../xmldoc",false);
+    std::unique_ptr<Pythia8::Pythia> pythia8(new Pythia8::Pythia("../xmldoc",false));
     pythia8->readString("Print:quiet=on");
     pythia8->readString("Random:setSeed = on"); 
     std::stringstream ss; 
@@ -188,7 +186,7 @@ int main(int argc, char* argv[]){
    }else{ throw std::invalid_argument("received invalid 'process'");}
 
    //Setup the pileup
-   Pythia8::Pythia* pythia_MB = new Pythia8::Pythia("../xmldoc",false);
+   std::unique_ptr<Pythia8::Pythia> pythia_MB(new Pythia8::Pythia("../xmldoc",false));
    pythia_MB->readString("Random:setSeed = on");   
    ss.clear(); 
    ss.str(""); 
@@ -204,10 +202,10 @@ int main(int argc, char* argv[]){
    pythia_MB->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */);
 
    // TimingAnalysis
-   TimingAnalysis * analysis = new TimingAnalysis(bunchsize,randZ,randT);
-   analysis->SetOutName(outName);
-   analysis->Begin();
-   analysis->Debug(fDebug);
+   TimingAnalysis analysis(bunchsize,randZ,randT,smearHS);
+   analysis.SetOutName(outName);
+   analysis.Begin(2*seed); //seeds vertex generator, different seed than pythia
+   analysis.Debug(fDebug);
 
    std::cout << "Number of Pileup Events: " << pileup << std::endl;
 
@@ -216,16 +214,11 @@ int main(int argc, char* argv[]){
    for (Int_t iev = 0; iev < nEvents; iev++) {
      if (iev%20==0)
        cout << "\tCurrent: " << iev << endl;
-     analysis->AnalyzeEvent(iev, pythia8, pythia_MB, pileup, minEta);
+     analysis.AnalyzeEvent(iev, pythia8.get(), pythia_MB.get(), pileup, minEta);
    }
 
-   analysis->End();
+   analysis.End();
    cout << "Timing Analysis Complete!" << endl;
-
-   // that was it
-   delete pythia8;
-   delete pythia_MB;
-   delete analysis;
 
    return 0;
 }

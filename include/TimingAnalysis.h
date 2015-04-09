@@ -53,12 +53,13 @@ class TimingAnalysis{
 
 	bool randomZ;
 	bool randomT;
+	bool smear;
 
     public:
-        TimingAnalysis (float bunchsize_=0.075, bool randomZ_=true, bool randomT_=false);
+        TimingAnalysis (float bunchsize_=0.075, bool randomZ_=true, bool randomT_=false, bool smear_=false);
         ~TimingAnalysis ();
         
-        void Begin();
+        void Begin(int seed=123);
         void AnalyzeEvent(int iEvt, Pythia8::Pythia *pythia8,  Pythia8::Pythia *pythia_MB, int NPV, float minEta);
         void End();
         void DeclareBranches();

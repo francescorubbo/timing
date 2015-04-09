@@ -54,7 +54,9 @@ do
 	for (( ii=1; ii<=$njobs; ii++ )) ;  do
             echo $ii
             OutDir=/scratch/${DateSuffix}_${ii}/
-            bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log $SubFileLoc           \
+            bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log \
+		-R "select[hname!='neb-lsf0001']" -R "select[hname!='neb-lsf0002']" -R "select[hname!='neb-lsf0003']" \
+	        $SubFileLoc           \
 		${WorkDir} ${OutDir} ${OutDirFinal} Timing.sh  \
 		--Pileup $mu                 \
 		--OutFile ${OutDir}/Sample_smeared_mu_${mu}_${mode}_nevents_${nevents}_job_${ii}.root \

@@ -5,7 +5,7 @@
 # Note: source setup.sh before make             #
 # --------------------------------------------- #
 
-CXXFLAGS =   -O2 -Wall 
+CXXFLAGS =   -O2 -Wall -std=c++0x
 
 .PHONY: clean debug all
 
