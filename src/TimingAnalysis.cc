@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <random>
 #include <set>
 
 #include "TFile.h"
@@ -39,9 +40,9 @@ double sgn(double val){
 }
 
 // Constructor 
-TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_, bool smear_){
+TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_, bool smear_,bool Debug){
 
-    fDebug=false;
+    fDebug=Debug;
 
     if(fDebug) 
       cout << "TimingAnalysis::TimingAnalysis Start " << endl;
@@ -62,68 +63,65 @@ TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_, b
 
 // Destructor 
 TimingAnalysis::~TimingAnalysis(){
+  if(tT != NULL){
+    tT->Write();
+    tF->Close();
+    delete tF;
+    delete tT;
+  }
+
+  if(jpt != NULL){
+    delete jpt;
+    delete jphi;
+    delete jeta;
+    delete jtime;
+    delete j0clpt;
+    delete j0clphi;
+    delete j0cleta;
+    delete j0cltime;
+    delete j0cltruth;
+    delete truejpt;
+    delete truejphi;
+    delete truejeta;
+    delete truejtime;
+  }
 }
 
 // Begin method
-void TimingAnalysis::Begin(int seed){
+void TimingAnalysis::Initialize(distribution dtype, int seed){
    // Declare TTree
    tF = new TFile(fOutName.c_str(), "RECREATE");
    tT = new TTree("tree", "Event Tree for Timing");
-   rnd = new TRandom3(seed);
+   rnd.reset(new TimingDistribution(bunchsize,seed));
+   _dtype=dtype;
 
    // for shit you want to do by hand
    DeclareBranches();
 
-   jpt = new vector<float>();  
-   jphi = new vector<float>();  
-   jeta = new vector<float>();  
-   jtime = new vector<float>();  
+   jpt = new timingBranch();  
+   jphi = new timingBranch();  
+   jeta = new timingBranch();  
+   jtime = new timingBranch();
 
-   j0clpt = new vector<float>();  
-   j0clphi = new vector<float>();  
-   j0cleta = new vector<float>();  
-   j0cltime = new vector<float>();  
-   j0cltruth = new vector<float>();
-
-   truejpt = new vector<float>();  
-   truejphi = new vector<float>();  
-   truejeta = new vector<float>();  
-   truejtime = new vector<float>();  
+   j0clpt = new timingBranch();  
+   j0clphi = new timingBranch();  
+   j0cleta = new timingBranch();  
+   j0cltime = new timingBranch();  
+   j0cltruth = new timingBranch();
+   
+   truejpt = new timingBranch();  
+   truejphi = new timingBranch();  
+   truejeta = new timingBranch();  
+   truejtime = new timingBranch();  
 
    ResetBranches();
    
    return;
 }
 
-// End
-void TimingAnalysis::End(){
-    
-    tT->Write();
-    tF->Close();
-
-    delete jpt;
-    delete jphi;
-    delete jeta;
-    delete jtime;
-
-    delete j0clpt;
-    delete j0clphi;
-    delete j0cleta;
-    delete j0cltime;
-    delete j0cltruth;
-
-    delete truejpt;
-    delete truejphi;
-    delete truejeta;
-    delete truejtime;
-
-    return;
-}
-
 // Analyze
 void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::Pythia* pythia_MB, int NPV,
 				  float minEta){
-
     if(fDebug) 
       cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
 
@@ -137,22 +135,22 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     
     // new event-----------------------
     fTEventNumber = ievt;
-    std::vector <fastjet::PseudoJet>           particlesForJets;
-    std::vector <fastjet::PseudoJet>           particlesForJets_np;
+    JetVector particlesForJets;
+    JetVector particlesForJets_np;
 
     //Pileup Loop
 
     fTNPV = NPV;
     std::pair<double,double> randomVariates;  
-    randomVariates=GetVtxZandT();
+    randomVariates=rnd->get(_dtype);
     fzvtxspread = randomVariates.first;
     ftvtxspread = randomVariates.second;
-
+    
     //Loop over Pileup Events
     for (int iPU = 0; iPU <= NPV; ++iPU) {
-
+      
       //determine random vertex position in z-t space                                                                                                                                                     
-      randomVariates=GetVtxZandT();
+      randomVariates=rnd->get(_dtype);
       double zvtx = 0;
       double tvtx = 0;
       if(randomZ)
@@ -205,8 +203,8 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 
     double tvtx=0.0;
     if(smear)
-      tvtx=GetVtxZandT().second;
-   
+      tvtx=rnd->get(_dtype).second;
+    
     // Particle loop -----------------------------------------------------------
     for (int ip=0; ip<pythia8->event.size(); ++ip){
       
@@ -238,16 +236,16 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     bge.set_particles(particlesForJets);
     fastjet::Subtractor subtractor(&bge);
 
-    vector<fastjet::PseudoJet> inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
-    vector<fastjet::PseudoJet> subtractedJets = subtractor(inclusiveJets);
+    JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
+    JetVector subtractedJets = subtractor(inclusiveJets);
     Selector select_fwd = SelectorAbsRapRange(minEta,4.5);
-    vector<fastjet::PseudoJet> selectedJets = select_fwd(subtractedJets);
+    JetVector selectedJets = select_fwd(subtractedJets);
 
     FillTree(selectedJets);
 
     fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
-    vector<fastjet::PseudoJet> truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
-    vector<fastjet::PseudoJet> selectedTruthJets = select_fwd(truthJets);
+    JetVector truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
+    JetVector selectedTruthJets = select_fwd(truthJets);
     FillTruthTree(selectedTruthJets);
 
     tT->Fill();
@@ -259,7 +257,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 }
 
 // worker function to actually perform an analysis
-void TimingAnalysis::FillTree(vector<fastjet::PseudoJet> jets){  
+void TimingAnalysis::FillTree(JetVector jets){  
 
   for (unsigned int ijet=0; ijet<jets.size(); ijet++){
     jpt->push_back(jets[ijet].pt());
@@ -278,8 +276,7 @@ void TimingAnalysis::FillTree(vector<fastjet::PseudoJet> jets){
     }  
 }
 
-void TimingAnalysis::FillTruthTree(vector<fastjet::PseudoJet> jets){  
-
+void TimingAnalysis::FillTruthTree(JetVector jets){  
   for (unsigned int ijet=0; ijet<jets.size(); ijet++){
     truejpt->push_back(jets[ijet].pt());
     truejeta->push_back(jets[ijet].eta());
@@ -304,9 +301,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet){
 
 // declare branches
 void TimingAnalysis::DeclareBranches(){
-   
    // Event Properties 
-
   gROOT->ProcessLine("#include <vector>");
   
   tT->Branch("EventNumber",&fTEventNumber,"EventNumber/I");
@@ -355,22 +350,60 @@ void TimingAnalysis::ResetBranches(){
 
 }
 
-std::pair<double,double> TimingAnalysis::GetVtxZandT(){
-    
-  double maxprob = GetIPprob(0,0);
+double TimingDistribution::probability(double zpos, double time, distribution dtype){
+  switch(dtype){
+  case gaussian:
+    static double ampl = LIGHTSPEED/(PI*_bunchsize*_bunchsize);
+    return ampl*exp(-( pow(zpos,2) + pow(LIGHTSPEED*time,2) ) / (pow(_bunchsize,2)));
+  case crabKissing:
+    return 1; //no implemented yet
+  default:
+    cerr << "Invalid RNG Distribution" << endl;
+    exit(10);
+  }
+}
+
+int TimingDistribution::randomSeed(){
+  int timeSeed = time(NULL);                                                                                                                                                                          \
+  return abs(((timeSeed*181)*((getpid()-83)*359))%104729); 
+}
+
+TimingDistribution::TimingDistribution(float bunchsize, int seed){
+  if(seed == -1){
+    cout << "Timing Distribution Generating Random Seed" << endl;
+    _seed=randomSeed();
+  }
+  else
+    _seed=seed;
+  
+  rng.seed(_seed);  
+  _bunchsize=bunchsize;
+}
+
+pair<double,double> TimingDistribution::get(distribution dtype){
+  
+  double maxprob = probability(0,0,dtype);
   double zpos;
   double time;
-
+  
   while(true){
-    zpos = rnd->Uniform(-3*bunchsize,3*bunchsize);
-    time = rnd->Uniform(-3*bunchsize/LIGHTSPEED,3*bunchsize/LIGHTSPEED);
-    if(GetIPprob(zpos,time)>maxprob*rnd->Uniform())
+    zpos = uniform(-3.0*_bunchsize,3.0*_bunchsize);
+    time = uniform(-3*_bunchsize/LIGHTSPEED,3*_bunchsize/LIGHTSPEED);
+    if(probability(zpos,time,dtype) > maxprob*uniform())
       break;
   }
+  cout << "Out: " << zpos << '\t' << time << endl;
   return std::make_pair(zpos,time);
 }
 
-double TimingAnalysis::GetIPprob(double zpos, double time){
-  double ampl = LIGHTSPEED/(PI*bunchsize*bunchsize);
-  return ampl*exp(-( pow(zpos,2) + pow(LIGHTSPEED*time,2) ) / (pow(bunchsize,2))); 
+double TimingDistribution::uniform(double min, double max){
+  static unsigned int range_min=rng.min();
+  static unsigned int range_max=rng.max();
+
+  unsigned int rn=rng();
+  double drn=static_cast<double>(rn-range_min)/static_cast<double>(range_max-range_min);
+  if((max != 1) and (min != 0))
+    return (max-min)*drn+min;
+  else
+    return drn;
 }

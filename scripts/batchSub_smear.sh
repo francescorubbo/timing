@@ -44,7 +44,7 @@ do
 	Queue=short
 	nevents=200
 	njobs=50
-	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_smeared_${mu}_${mode}_
+	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_smeared_${mu}_${bunchsize}_
 	OutDirFinal=`pwd`/files/${DateSuffix}
 	mkdir -p `dirname $LogPrefix`
 	mkdir -p $OutDirFinal
@@ -59,7 +59,7 @@ do
 	        $SubFileLoc           \
 		${WorkDir} ${OutDir} ${OutDirFinal} Timing.sh  \
 		--Pileup $mu                 \
-		--OutFile ${OutDir}/Sample_smeared_mu_${mu}_${mode}_nevents_${nevents}_job_${ii}.root \
+		--OutFile ${OutDir}/Sample_smeared_mu_${mu}_${bunchsize}_nevents_${nevents}_job_${ii}.root \
 		--Proc ${Process} \
 		--NEvents ${nevents} \
 		--BunchSize ${bunchsize} \

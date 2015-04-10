@@ -31,11 +31,11 @@ namespace po = boost::program_options;
 void printBanner();
 void printOptions(po::variables_map vm);
 
-int getSeed(int seed){                                                                                                                                                                                                                                              
-    if (seed > -1) return seed;                                                                                                                                                                                                                                  
-    int timeSeed = time(NULL);                                                                                                                                                                                                                                         
-    return abs(((timeSeed*181)*((getpid()-83)*359))%104729);                                                                                                                                                                                                           
-}  
+int getSeed(int seed){                                                                                                                                                                     
+  if (seed > -1) return seed;                                                                                                                                                           
+  int timeSeed = time(NULL);                                                                 
+  return abs(((timeSeed*181)*((getpid()-83)*359))%104729);
+}
 
 int main(int argc, char* argv[]){
     // arguments 
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]){
    // TimingAnalysis
    TimingAnalysis analysis(bunchsize,randZ,randT,smearHS);
    analysis.SetOutName(outName);
-   analysis.Begin(2*seed); //seeds vertex generator, different seed than pythia
+   analysis.Initialize(distribution::gaussian,2*seed); //seeds vertex generator, different seed than pythia
    analysis.Debug(fDebug);
 
    std::cout << "Number of Pileup Events: " << pileup << std::endl;
@@ -217,7 +217,6 @@ int main(int argc, char* argv[]){
      analysis.AnalyzeEvent(iev, pythia8.get(), pythia_MB.get(), pileup, minEta);
    }
 
-   analysis.End();
    cout << "Timing Analysis Complete!" << endl;
 
    return 0;

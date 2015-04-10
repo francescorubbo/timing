@@ -40,7 +40,7 @@ chmod u+x $SubFileLoc
 
 #----------------
 Process=4
-bunchsizes="0.10 0.125"
+bunchsizes="0.125"
 mode="VaryZT"
 for bunchsize in $bunchsizes
 do
@@ -48,7 +48,7 @@ do
 	Queue=short
 	nevents=200
 	njobs=50
-	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_${mu}_${mode}_
+	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_${mu}_${bunchsize}_
 	OutDirFinal=`pwd`/files/${DateSuffix}
 	mkdir -p `dirname $LogPrefix`
 	mkdir -p $OutDirFinal
@@ -63,7 +63,7 @@ do
 	        $SubFileLoc           \
 		${WorkDir} ${OutDir} ${OutDirFinal} Timing.sh  \
 		--Pileup $mu                 \
-		--OutFile ${OutDir}/Sample_mu_${mu}_${mode}_nevents_${nevents}_job_${ii}.root \
+		--OutFile ${OutDir}/Sample_mu_${mu}_${bunchsize}_nevents_${nevents}_job_${ii}.root \
 		--Proc ${Process} \
 		--NEvents ${nevents} \
 		--BunchSize ${bunchsize} \
