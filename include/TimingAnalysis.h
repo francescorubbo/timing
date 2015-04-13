@@ -30,12 +30,20 @@ class TimingDistribution{
  private:
   float _bunchsize;
   int _seed;
-  mt19937 rng;  // mt19937 is a standard mersenne_twister_engine                                                                                                                                      
+  mt19937 rng;  // mt19937 is a standard mersenne_twister_engine                                                            
+
+  double _phi;
+  double _psi;
+                                                                          
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
 
  public:
-  TimingDistribution(float bunchsize=0.075, int seed=-1);
+  TimingDistribution(float bunchsize=0.075, int seed=-1, double phi=0.0, double psi=0.0);
+  void phi(double phi);
+  void psi(double psi);
+  double psi(){return _psi};
+  double phi(){return _phi};
   pair<double,double> get(distribution dtype=gaussian);
   double uniform(double min=0, double max=1);
 };
