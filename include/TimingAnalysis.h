@@ -34,6 +34,8 @@ class TimingDistribution{
 
   double _phi;
   double _psi;
+  double _phi_nums[2];
+  double _psi_nums[2];
                                                                           
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
@@ -42,8 +44,8 @@ class TimingDistribution{
   TimingDistribution(float bunchsize=0.075, int seed=-1, double phi=0.0, double psi=0.0);
   void phi(double phi);
   void psi(double psi);
-  double psi(){return _psi};
-  double phi(){return _phi};
+  double psi(){return _psi;};
+  double phi(){return _phi;};
   pair<double,double> get(distribution dtype=gaussian);
   double uniform(double min=0, double max=1);
 };
@@ -97,7 +99,7 @@ class TimingAnalysis{
   ~TimingAnalysis ();
   
   void AnalyzeEvent(int iEvt, Pythia8::Pythia *pythia8,  Pythia8::Pythia *pythia_MB, int NPV, float minEta);
-  void Initialize(distribution dtype=gaussian,int seed=123);
+  void Initialize(distribution dtype=gaussian,int seed=123, double phi=0, double psi=0);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}

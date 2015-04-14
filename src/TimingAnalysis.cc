@@ -67,7 +67,6 @@ TimingAnalysis::~TimingAnalysis(){
     tT->Write();
     tF->Close();
     delete tF;
-    delete tT;
   }
 
   if(jpt != NULL){
@@ -88,11 +87,11 @@ TimingAnalysis::~TimingAnalysis(){
 }
 
 // Begin method
-void TimingAnalysis::Initialize(distribution dtype, int seed){
+void TimingAnalysis::Initialize(distribution dtype, int seed, double phi, double psi){
    // Declare TTree
    tF = new TFile(fOutName.c_str(), "RECREATE");
    tT = new TTree("tree", "Event Tree for Timing");
-   rnd.reset(new TimingDistribution(bunchsize,seed));
+   rnd.reset(new TimingDistribution(bunchsize,seed,phi,psi));
    _dtype=dtype;
 
    // for shit you want to do by hand
@@ -351,12 +350,14 @@ void TimingAnalysis::ResetBranches(){
 }
 
 double TimingDistribution::probability(double zpos, double time, distribution dtype){
+  double ampl = LIGHTSPEED/(PI*_bunchsize*_bunchsize);
+
   switch(dtype){
   case gaussian:
-    static double ampl = LIGHTSPEED/(PI*_bunchsize*_bunchsize);
     return ampl*exp(-( pow(zpos,2) + pow(LIGHTSPEED*time,2) ) / (pow(_bunchsize,2)));
   case crabKissing:
-    return 1; //no implemented yet
+    ampl*=_phi_nums[1]*_psi_nums[1];
+    return ampl*exp(-((pow(zpos,2)*_phi_nums[0]) + (pow(LIGHTSPEED*time,2)*_psi_nums[0])) / (pow(_bunchsize,2)));
   default:
     cerr << "Invalid RNG Distribution" << endl;
     exit(10);
@@ -364,20 +365,33 @@ double TimingDistribution::probability(double zpos, double time, distribution dt
 }
 
 int TimingDistribution::randomSeed(){
-  int timeSeed = time(NULL);                                                                                                                                                                          \
+  int timeSeed = time(NULL);
   return abs(((timeSeed*181)*((getpid()-83)*359))%104729); 
 }
 
-TimingDistribution::TimingDistribution(float bunchsize, int seed){
+TimingDistribution::TimingDistribution(float bunchsize, int seed, double phi, double psi) : _bunchsize(bunchsize){
   if(seed == -1){
     cout << "Timing Distribution Generating Random Seed" << endl;
     _seed=randomSeed();
   }
   else
     _seed=seed;
-  
+
   rng.seed(_seed);  
-  _bunchsize=bunchsize;
+  this->phi(phi);
+  this->psi(psi);
+}
+
+void TimingDistribution::phi(double phi){
+  _phi=phi;
+  _phi_nums[0]=1+pow(phi,2);
+  _phi_nums[1]=sqrt(_phi_nums[0]);
+}
+
+void TimingDistribution::psi(double psi){
+  _psi=psi;
+  _psi_nums[0]=1+pow(psi,2);
+  _psi_nums[1]=sqrt(_psi_nums[0]);
 }
 
 pair<double,double> TimingDistribution::get(distribution dtype){
@@ -392,7 +406,6 @@ pair<double,double> TimingDistribution::get(distribution dtype){
     if(probability(zpos,time,dtype) > maxprob*uniform())
       break;
   }
-  cout << "Out: " << zpos << '\t' << time << endl;
   return std::make_pair(zpos,time);
 }
 

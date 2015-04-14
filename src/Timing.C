@@ -50,9 +50,13 @@ int main(int argc, char* argv[]){
     float  boson_mass=1500;
     int    proc      = 4;
     int    seed      =-1;
+
     bool   randZ     =true;
     bool   randT     =false;
     bool   smearHS   =false;
+    bool   useCK     =false;
+    float  phi       =0;
+    float  psi       =0;
 
     po::options_description gen_desc("Allowed options");
     gen_desc.add_options()
@@ -66,13 +70,16 @@ int main(int argc, char* argv[]){
       ("VaryZ",     "Vary only Z Vertex of Pileup")
       ("VaryT",     "Vary only Vertex Time of Pileup")
       ("VaryZT",    "Vary both Z and Time of Vertex of Pileup")
-      ("SmearHS",   "Smear Hard Scatter Vertex in Time");
+      ("SmearHS",   "Smear Hard Scatter Vertex in Time")
+      ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0");
 
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
       ("NEvents",   po::value<int>(&nEvents)->default_value(1) ,    "Number of Events ")
       ("Pileup",    po::value<int>(&pileup)->default_value(0), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
+      ("Phi",     po::value<float>(&phi)->default_value(0), "Phi Parameter, Crab-Kissing PDF")
+      ("Psi",     po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
@@ -125,6 +132,14 @@ int main(int argc, char* argv[]){
       randZ=false;
       randT=false;
     }
+
+    if ((vm.count("ForceCK")>0) or (phi != 0) or (psi != 0)){
+      cout << "\tUsing Crab-Kissing PDF" << endl;
+      useCK=true;
+    }
+    else
+      cout << "\tUsing Gaussian PDF" << endl;
+
     cout << endl;
     
     //seed 
@@ -204,7 +219,14 @@ int main(int argc, char* argv[]){
    // TimingAnalysis
    TimingAnalysis analysis(bunchsize,randZ,randT,smearHS);
    analysis.SetOutName(outName);
-   analysis.Initialize(distribution::gaussian,2*seed); //seeds vertex generator, different seed than pythia
+
+   //determine which PDF should be used
+   if(useCK){
+     analysis.Initialize(distribution::crabKissing,2*seed,phi,psi);
+   }
+   else
+     analysis.Initialize(distribution::gaussian,2*seed); //seeds vertex generator, different seed than pythia
+   
    analysis.Debug(fDebug);
 
    std::cout << "Number of Pileup Events: " << pileup << std::endl;
@@ -232,7 +254,7 @@ void printOptions(po::variables_map vm){
   cout << "Settings:" << endl;
   for (po::variables_map::const_iterator itr=vm.begin();itr != vm.end();++itr){
     printf("%15s\t",itr->first.c_str());
-    if((itr->first == "VaryT") or (itr->first == "VaryZ") or (itr->first == "VaryZT")){
+    if((itr->first == "VaryT") or (itr->first == "VaryZ") or (itr->first == "VaryZT") or (itr->first == "ForceCK") or (itr->first == "SmearHS")){
       cout << endl;
       continue;
     }
