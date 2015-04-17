@@ -57,6 +57,7 @@ int main(int argc, char* argv[]){
     bool   useCK     =false;
     float  phi       =0;
     float  psi       =0;
+    int    profile   =0;
 
     po::options_description gen_desc("Allowed options");
     gen_desc.add_options()
@@ -78,6 +79,7 @@ int main(int argc, char* argv[]){
       ("NEvents",   po::value<int>(&nEvents)->default_value(1) ,    "Number of Events ")
       ("Pileup",    po::value<int>(&pileup)->default_value(0), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
+      ("Profile",   po::value<int>(&profile)->default_value(0), "Bunch Profile Type:\n - 0: Gaussian\n - 1: PseudoRectangular")
       ("Phi",     po::value<float>(&phi)->default_value(0), "Phi Parameter, Crab-Kissing PDF")
       ("Psi",     po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
@@ -133,12 +135,30 @@ int main(int argc, char* argv[]){
       randT=false;
     }
 
-    if ((vm.count("ForceCK")>0) or (phi != 0) or (psi != 0)){
-      cout << "\tUsing Crab-Kissing PDF" << endl;
-      useCK=true;
+    if((profile < 0) or (profile > 1)){
+      cerr << "ERROR: Invalid profile \"" << profile << "\", choices are Gaussian (0) and PseudoRectangular (1)" << endl;
+      exit(2);
     }
-    else
-      cout << "\tUsing Gaussian PDF" << endl;
+    
+    distribution dtype=distribution::gaussian;
+    if ((vm.count("ForceCK")>0) or (phi != 0) or (psi != 0)){
+      useCK=true;
+      if(profile == 0){
+	dtype=distribution::crabKissingGaussian;
+	cout << "Using Gaussian Crab-Kissing Bunch Profile" << endl;
+      }
+      else{
+	dtype=distribution::crabKissingSquare;
+	cout << "Using PseudoRectangular Crab-Kissing Bunch Profile" << endl;
+      }
+    }
+    else if (profile == 1){
+      dtype=distribution::pseudoRectangular;
+      cout << "Using PseudoRectangular Bunch Profile" << endl;
+    }
+    else{
+      cout << "Using Gaussian Bunch Profile" << endl;
+    }
 
     cout << endl;
     
@@ -219,14 +239,8 @@ int main(int argc, char* argv[]){
    // TimingAnalysis
    TimingAnalysis analysis(bunchsize,randZ,randT,smearHS);
    analysis.SetOutName(outName);
-
-   //determine which PDF should be used
-   if(useCK){
-     analysis.Initialize(distribution::crabKissing,2*seed,phi,psi);
-   }
-   else
-     analysis.Initialize(distribution::gaussian,2*seed); //seeds vertex generator, different seed than pythia
-   
+   //seeds vertex generator, different seed than pythia
+   analysis.Initialize(dtype,2*seed,phi,psi);
    analysis.Debug(fDebug);
 
    std::cout << "Number of Pileup Events: " << pileup << std::endl;

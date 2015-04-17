@@ -26,6 +26,9 @@ typedef vector<fastjet::PseudoJet> JetVector;
 
 enum distribution {gaussian, pseudoRectangular, crabKissingGaussian, crabKissingSquare};
 
+const double LIGHTSPEED = 299792458.; 
+const double PI = 3.141592653589793238463;
+
 class TimingDistribution{
  private:
   float _bunchsize;
@@ -42,9 +45,6 @@ class TimingDistribution{
   
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
-
-  const double LIGHTSPEED;
-  const double PI;
 
  public:
   TimingDistribution(float bunchsize=0.075, int seed=-1, double phi=0.0, double psi=0.0);

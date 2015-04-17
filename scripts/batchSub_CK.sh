@@ -67,7 +67,7 @@ do
 		--Seed ${ii} \
 		--SmearHS \
 		--VaryZT \
-		--ForceCK \
+		--Profile 1 \
 		--Psi $psi   
 	done
     done

@@ -347,16 +347,18 @@ void TimingAnalysis::ResetBranches(){
 }
 
 double TimingDistribution::probability(double zpos, double time, distribution dtype){
+  double ampl=0;
+  
   switch(dtype){
   case gaussian:
     return _gauss_norm*exp(-( pow(zpos,2) + pow(LIGHTSPEED*time,2) ) / (pow(_bunchsize,2)));
   case crabKissingGaussian:
-    double ampl=_gauss_norm*_phi_nums[1]*_psi_nums[1];
+    ampl=_gauss_norm*_phi_nums[1]*_psi_nums[1];
     return ampl*exp(-((pow(zpos,2)*_phi_nums[0]) + (pow(LIGHTSPEED*time,2)*_psi_nums[0])) / (pow(_bunchsize,2)));
   case pseudoRectangular:
     return _square_norm*exp(-(4*PI*PI/pow((tgamma(0.25)*_bunchsize),4))*(pow(zpos,4)+pow(LIGHTSPEED*time,4)+6*pow(LIGHTSPEED*time*zpos,2)));
   case crabKissingSquare:
-    double ampl=_square_norm*_phi_nums[1]*_psi_nums[1];
+    ampl=_square_norm*_phi_nums[1]*_psi_nums[1];
     return _square_norm*exp(-(4*PI*PI/pow((tgamma(0.25)*_bunchsize),4))*(pow(zpos,4)+pow(LIGHTSPEED*time,4)+6*pow(LIGHTSPEED*time*zpos,2)))*exp(-(pow(zpos*_phi,2) + pow(LIGHTSPEED*time*_psi,2)) / (pow(_bunchsize,2)));
   default:
     cerr << "Invalid RNG Distribution" << endl;
@@ -369,7 +371,7 @@ int TimingDistribution::randomSeed(){
   return abs(((timeSeed*181)*((getpid()-83)*359))%104729); 
 }
 
-TimingDistribution::TimingDistribution(float bunchsize, int seed, double phi, double psi) : _bunchsize(bunchsize), LIGHTSPEED(299792458.), PI(3.141592653589793238463){
+TimingDistribution::TimingDistribution(float bunchsize, int seed, double phi, double psi) : _bunchsize(bunchsize){
   if(seed == -1){
     cout << "Timing Distribution Generating Random Seed" << endl;
     _seed=randomSeed();
