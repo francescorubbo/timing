@@ -24,21 +24,27 @@ using namespace fastjet;
 typedef vector<float> timingBranch;
 typedef vector<fastjet::PseudoJet> JetVector;
 
-enum distribution {gaussian, crabKissing};
+enum distribution {gaussian, pseudoRectangular, crabKissingGaussian, crabKissingSquare};
 
 class TimingDistribution{
  private:
   float _bunchsize;
   int _seed;
-  mt19937 rng;  // mt19937 is a standard mersenne_twister_engine                                                            
+  mt19937 rng;  // mt19937 is a standard mersenne_twister_engine
 
   double _phi;
   double _psi;
   double _phi_nums[2];
   double _psi_nums[2];
-                                                                          
+
+  double _gauss_norm;
+  double _square_norm;
+  
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
+
+  const double LIGHTSPEED;
+  const double PI;
 
  public:
   TimingDistribution(float bunchsize=0.075, int seed=-1, double phi=0.0, double psi=0.0);
