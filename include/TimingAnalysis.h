@@ -1,3 +1,5 @@
+//-*-c++-*-
+
 #ifndef  TimingAnalysis_H
 #define  TimingAnalysis_H
 
@@ -25,6 +27,7 @@ typedef vector<float> timingBranch;
 typedef vector<fastjet::PseudoJet> JetVector;
 
 enum distribution {gaussian, pseudoRectangular, crabKissingGaussian, crabKissingSquare};
+enum smearMode {Off,Z,T,ZT};
 
 const double LIGHTSPEED = 299792458.; 
 const double PI = 3.141592653589793238463;
@@ -93,6 +96,7 @@ class TimingAnalysis{
   bool randomZ;
   bool randomT;
   bool smear;
+  bool displace;
   
   void DeclareBranches();
   void ResetBranches();
@@ -101,7 +105,7 @@ class TimingAnalysis{
   double ComputeTime(PseudoJet jet);
   
  public:
-  TimingAnalysis (float bunchsize_=0.075, bool randomZ_=true, bool randomT_=false, bool smear_=false, bool Debug=false);
+  TimingAnalysis (float bunchsize_=0.075, smearMode PU=ZT, smearMode HS=ZT, bool Debug=false);
   ~TimingAnalysis ();
   
   void AnalyzeEvent(int iEvt, Pythia8::Pythia *pythia8,  Pythia8::Pythia *pythia_MB, int NPV, float minEta);
@@ -109,6 +113,9 @@ class TimingAnalysis{
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}
+  void Bunchsize(float bunchsize_){bunchsize=(bunchsize_>0?:bunchsize_:0)}
+  void PileupMode(smearMode PU);
+  void SignalMode(smearMode HS);
   void SetOutName(string outname){fOutName = outname;}
   
 };

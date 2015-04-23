@@ -40,22 +40,61 @@ double sgn(double val){
 TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_, bool smear_,bool Debug){
 
     fDebug=Debug;
-
     if(fDebug) 
       cout << "TimingAnalysis::TimingAnalysis Start " << endl;
+
     ftest = 0;
     fOutName = "test.root";
 
-    bunchsize = bunchsize_;
-    randomZ=randomZ_;
-    randomT=randomT_;
-    smear=smear_;
+    Bunchsize(bunchsize_);
+    PiluepMode(PU);
+    SignalMode(PU);
 
     if(fDebug) 
       cout << "TimingAnalysis::TimingAnalysis End " << endl;
 
     //suppress fastjet banner
     fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
+}
+
+void PileupMode(smearMode PU){
+  switch(PU){
+  case Off:
+    randomT=false;
+    randomZ=false;
+    break;
+  case Z:
+    randomT=false;
+    randomZ=true;
+    break;
+  case T:
+    randomT=true;
+    randomZ=false;
+    break;
+  case ZT:
+    randomT=true;
+    randomZ=false;
+  }
+}
+
+void SignalMode(smearMode HS){
+  switch(PU){
+  case Off:
+    smear=false;
+    displace=false;
+    break;
+  case Z:
+    smear=false;
+    displace=true;
+    break;
+  case T:
+    smear=true;
+    displace=false;
+    break;
+  case ZT:
+    smear=true;
+    displace=false;
+  }
 }
 
 // Destructor 
@@ -196,10 +235,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     }
 
     //determine random vertex position in z-t space                                                                                                                             
-
-    double tvtx=0.0;
+    randomVariates=rnd->get(_dtype);
+    double zvtx = 0;
+    double tvtx = 0;
     if(smear)
-      tvtx=rnd->get(_dtype).second;
+      tvtx=randomVariates.second;
     
     // Particle loop -----------------------------------------------------------
     for (int ip=0; ip<pythia8->event.size(); ++ip){
