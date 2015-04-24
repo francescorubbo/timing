@@ -1,25 +1,11 @@
 #include "Configuration.h"
 
 Configuration::Configuration(int argc, char* argv[]){
-      // arguments 
-    outName   = "Timing.root";
-    pileup    = 0;
-    bunchsize = 0.075;
-    minEta    = 2.5;
-    nEvents   = 1;
-    fDebug    = 1;
-    pThatmin  =100;
-    pThatmax  =500;
-    boson_mass=1500;
-    proc      = 4;
-    seed      =-1;
 
-    HSmode =smearMode::Z;
+    HSmode =smearMode::Off;
     PUmode =smearMode::Off;
     useCK     =false;
-    phi       =0;
-    psi       =0;
-    profile   =0;
+    int profile;
 
     po::options_description gen_desc("Allowed options");
     gen_desc.add_options()
@@ -41,12 +27,13 @@ Configuration::Configuration(int argc, char* argv[]){
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
       ("NEvents",   po::value<int>(&nEvents)->default_value(1) ,    "Number of Events ")
-      ("Pileup",    po::value<int>(&pileup)->default_value(0), "Number of Additional Interactions")
+      ("Pileup",    po::value<int>(&pileup)->default_value(80), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
       ("Profile",   po::value<int>(&profile)->default_value(0), "Bunch Profile Type:\n - 0: Gaussian\n - 1: PseudoRectangular")
       ("Phi",     po::value<float>(&phi)->default_value(0), "Phi Parameter, Crab-Kissing PDF")
       ("Psi",     po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
+      ("MaxEta",    po::value<float>(&maxEta)->default_value(4.3), "Minimum Pseudorapidity for Particles")
       ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
@@ -55,8 +42,6 @@ Configuration::Configuration(int argc, char* argv[]){
 
     po::options_description desc;
     desc.add(gen_desc).add(sim_flag).add(sim_desc);
-
-    po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
@@ -64,10 +49,9 @@ Configuration::Configuration(int argc, char* argv[]){
         cout << desc << "\n";
 	exit(0);
     }
-    else{
-      printBanner();
-      printOptions(vm);
-    }
+
+    printBanner();
+    print();
 
     cout << "\t";
     if (vm.count("SmearHST")>0){
@@ -107,6 +91,7 @@ Configuration::Configuration(int argc, char* argv[]){
     }
     
     dtype=distribution::gaussian;
+    cout << "\t";
     if ((vm.count("ForceCK")>0) or (phi != 0) or (psi != 0)){
       useCK=true;
       if(profile == 0){
@@ -122,20 +107,20 @@ Configuration::Configuration(int argc, char* argv[]){
       dtype=distribution::pseudoRectangular;
       cout << "Using PseudoRectangular Bunch Profile" << endl;
     }
-    else{
+    else
       cout << "Using Gaussian Bunch Profile" << endl;
-    }
+
+    seed=getSeed(seed);
 
     cout << endl;
 }
 
-void printBanner(){
+void Configuration::print(){
+
   cout << endl << "=================================================================" << endl;
   cout << "=                        Timing Analysis                        =" << endl;
   cout << "=================================================================" << endl << endl;
-}
 
-void printOptions(po::variables_map vm){
   cout << "Settings:" << endl;
   for (po::variables_map::const_iterator itr=vm.begin();itr != vm.end();++itr){
     printf("%15s\t",itr->first.c_str());
@@ -172,17 +157,17 @@ void printOptions(po::variables_map vm){
   }
 }
 
-void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaSettings settings){
+void Configuration::ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs){
 
     hs->readString("Print:quiet=on");
     hs->readString("Random:setSeed = on"); 
     std::stringstream ss; 
-    ss << "Random:seed = " << settings.seed;
+    ss << "Random:seed = " << seed;
     hs->readString(ss.str());
 
    if(proc ==1){
      std::stringstream bosonmass_str; 
-     bosonmass_str<< "32:m0=" << settings.bosonMass ;
+     bosonmass_str<< "32:m0=" << boson_mass;
      hs->readString(bosonmass_str.str());
      hs->readString("NewGaugeBoson:ffbar2gmZZprime= on");
      hs->readString("Zprime:gmZmode=3");
@@ -193,7 +178,7 @@ void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaS
      hs->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */); //this has to be the last line! 
    }else if(proc ==2){
       std::stringstream bosonmass_str; 
-      bosonmass_str<< "34:m0=" << settings.bosonMass ;
+      bosonmass_str<< "34:m0=" << boson_mass;
       
       hs->readString(bosonmass_str.str());
       hs->readString("NewGaugeBoson:ffbar2Wprime = on");
@@ -207,7 +192,7 @@ void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaS
       hs->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */); //this has to be the last line!
    }else if(proc == 3){
       std::stringstream bosonmass_str; 
-      bosonmass_str<< "34:m0=" << settings.bosonMass ;
+      bosonmass_str<< "34:m0=" << boson_mass;
       hs->readString(bosonmass_str.str());
       hs->readString("NewGaugeBoson:ffbar2Wprime = on");
       hs->readString("Wprime:coup2WZ=1");
@@ -222,8 +207,8 @@ void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaS
       hs->readString("HardQCD:all = on");
       std::stringstream ptHatMin;
       std::stringstream ptHatMax;
-      ptHatMin << "PhaseSpace:pTHatMin  =" << settings.pthatmin;
-      ptHatMax << "PhaseSpace:pTHatMax  =" << settings.pthatmax;
+      ptHatMin << "PhaseSpace:pTHatMin  =" << pThatmin;
+      ptHatMax << "PhaseSpace:pTHatMax  =" << pThatmax;
       hs->readString(ptHatMin.str());
       hs->readString(ptHatMax.str());
       hs->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */); //this has to be the last line!
@@ -236,7 +221,7 @@ void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaS
    pu->readString("Random:setSeed = on");   
    ss.clear(); 
    ss.str(""); 
-   ss << "Random:seed = " << settings.seed+1; 
+   ss << "Random:seed = " << seed+1; 
    pu->readString(ss.str());
    pu->readString("Print:quiet=on");
    pu->readString("SoftQCD:nonDiffractive = on");
@@ -246,4 +231,10 @@ void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaS
    pu->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */);
 
    return;
+}
+
+int Configuration::getSeed(int seed){                                                      
+  if (seed > -1) return seed;
+  int timeSeed = time(NULL);                                                                 
+  return abs(((timeSeed*181)*((getpid()-83)*359))%104729);
 }

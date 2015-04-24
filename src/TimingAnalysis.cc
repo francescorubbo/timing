@@ -37,7 +37,7 @@ double sgn(double val){
 }
 
 // Constructor 
-TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, float bunchsize_, smearMode PU, smearMode HS, bool Debug){
+TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q){
 
   if((pythiaHS != NULL) and (pythiaPU != NULL)){
     _pythiaHS=pythiaHS;
@@ -48,16 +48,18 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
     exit(1);
   }
 
-  fDebug=Debug;
+  fDebug=q.fDebug;
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis Start " << endl;
 
   ftest = 0;
-  fOutName = "test.root";
+  fOutName = q.outName;
   
-  Bunchsize(bunchsize_);
-  PileupMode(PU);
-  SignalMode(HS);
+  Bunchsize(q.bunchsize);
+  PileupMode(q.PUmode);
+  SignalMode(q.HSmode);
+  Psi(q.psi);
+  Phi(q.phi);
   
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
@@ -106,6 +108,14 @@ void TimingAnalysis::SignalMode(smearMode HS){
   }
 }
 
+void TimingAnalysis::Phi(double phi){
+  this->phi= phi;
+}
+
+void TimingAnalysis::Psi(double psi){
+  this->psi= psi;
+}
+
 // Destructor 
 TimingAnalysis::~TimingAnalysis(){
   if(tT != NULL){
@@ -132,7 +142,7 @@ TimingAnalysis::~TimingAnalysis(){
 }
 
 // Begin method
-void TimingAnalysis::Initialize(distribution dtype, int seed, double phi, double psi){
+void TimingAnalysis::Initialize(distribution dtype, int seed){
    // Declare TTree
    tF = new TFile(fOutName.c_str(), "RECREATE");
    tT = new TTree("tree", "Event Tree for Timing");
@@ -164,7 +174,7 @@ void TimingAnalysis::Initialize(distribution dtype, int seed, double phi, double
 }
 
 // Analyze
-void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta){
+void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta){
 
   if(fDebug) 
     cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
@@ -226,14 +236,14 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta){
       
       //calculate eta from displacement (minEta pos)
       static const double radius = 1.2; // barrel radius=1.2 meter
-      double zbase = radius*sinh(minEta)*sgn(eta)-zhs; //displace due to new location of Hard-Scatter Vertex
+      double zbase = radius*sinh(minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex
       double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
-      if(fabs(corrEta)>5.0) continue;
+      if(fabs(corrEta)>maxEta) continue;
       
       //calculate time measured relative to if event was at 0
       double dist = (zbase-zvtx)*cosheta/sinheta;
       double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
-      double refdist = zbase*cosh(corrEta)/sinh(corrEta);
+      double refdist = zbase*cosh(corrEta)/sinh(corrEta)-zhs;
       double reftime = fabs(refdist)/LIGHTSPEED;
       double corrtime = (time-reftime)*1e9;
       if(fabs(corrEta)<minEta) 
@@ -264,7 +274,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta){
     
     fastjet::PseudoJet p(_pythiaHS->event[ip].px(), _pythiaHS->event[ip].py(), _pythiaHS->event[ip].pz(),_pythiaHS->event[ip].e() ); 
     double eta = p.rapidity();
-    if (fabs(eta)>5.0) continue;
+    if (fabs(eta)>maxEta) continue;
     double corrtime = tvtx*1e9;
     if (fabs(eta)<minEta) corrtime = -999.;
     p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);

@@ -12,45 +12,37 @@
 using namespace std;
 namespace po = boost::program_options;
 
-void printBanner();
-void printOptions(po::variables_map vm);
-
-struct PythiaSettings{
-  PythiaSettings(float m,float pmin,float pmax,float s){
-    bosonMass=m;
-    pthatmin=pmin;
-    pthatmax=pmax;
-    seed=s;
-  }
-  float bosonMass;
-  float pthatmin;
-  float pthatmax;
-  float seed;
-};
-
-void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaSettings settings);
-
-struct Configuration{
+class Configuration{
+private:
+  po::variables_map vm;
+  int getSeed(int seed);
+public:
   Configuration(int argc, char* argv[]);
+  void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs);
+  void print();
   
   string outName;
+
   int    pileup;
-  float  bunchsize;
-  float  minEta;
   int    nEvents;
   int    fDebug;
+  int    proc;
+  int    seed;
+
+  float  bunchsize;
+  float  minEta;
+  float  maxEta;  
   float  pThatmin;
   float  pThatmax;
   float  boson_mass;
-  int    proc;
-  int    seed;
-  smearMode HSmode;
-  smearMode PUmode;
-  bool   useCK;
+
   float  phi;
   float  psi;
-  int    profile;
-  distribution dtype;
+
+  bool   useCK;
+  smearMode HSmode;
+  smearMode PUmode;
+  distribution dtype;  
 };
 
 #endif

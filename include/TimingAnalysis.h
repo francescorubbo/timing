@@ -71,6 +71,8 @@ class TimingAnalysis{
   
   float bunchsize;
   distribution _dtype;
+  double psi;
+  double phi;
   
   // Tree Vars ---------------------------------------
   int fTEventNumber;
@@ -108,17 +110,19 @@ class TimingAnalysis{
   double ComputeTime(PseudoJet jet);
   
  public:
-  TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, float bunchsize_=0.075, smearMode PU=ZT, smearMode HS=ZT, bool Debug=false);
+  TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q);
   ~TimingAnalysis ();
   
-  void AnalyzeEvent(int iEvt, int NPV, float minEta);
-  void Initialize(distribution dtype=gaussian,int seed=123, double phi=0, double psi=0);
+  void AnalyzeEvent(int iEvt, int NPV, float minEta, float maxEta);
+  void Initialize(distribution dtype=gaussian,int seed=123);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}
   void Bunchsize(float bunchsize_){bunchsize=(bunchsize_>0)?bunchsize_:0;}
   void PileupMode(smearMode PU);
   void SignalMode(smearMode HS);
+  void Phi(double phi);
+  void Psi(double psi);
   void SetOutName(string outname){fOutName = outname;}
   
 };
