@@ -105,6 +105,8 @@ class TimingAnalysis{
   void FillTree(JetVector jets);
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet);
+
+  void BinParticles(float binScale, JetVector input, JetVector output);
   
  public:
   TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q);
