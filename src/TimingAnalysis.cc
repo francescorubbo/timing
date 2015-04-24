@@ -201,8 +201,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
   ftvtxspread = randomVariates.second;
   
   double zhs=0.0;
+  double ths=0.0;
   if(displace) //randomly distribute "ideally measured" hard-scatter vertex
     zhs=fzvtxspread;
+  if(smear)
+    ths=ftvtxspread;
   
   //Loop over Pileup Events
   for (int iPU = 0; iPU <= NPV; ++iPU) {
@@ -243,7 +246,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       //calculate time measured relative to if event was at 0
       double dist = (zbase-zvtx)*cosheta/sinheta;
       double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
-      double refdist = zbase*cosh(corrEta)/sinh(corrEta)-zhs;
+      double refdist = (zbase-zhs)*cosh(corrEta)/sinh(corrEta);
       double reftime = fabs(refdist)/LIGHTSPEED;
       double corrtime = (time-reftime)*1e9;
       if(fabs(corrEta)<minEta) 
@@ -256,11 +259,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
     }
     if (!_pythiaPU->next()) continue;
   }
-  
-  //determine random time position for hard scatter
-  double tvtx = 0;
-  if(smear)
-    tvtx=rnd->get(_dtype).second;
   
   // Particle loop -----------------------------------------------------------
   for (int ip=0; ip<_pythiaHS->event.size(); ++ip){
@@ -275,7 +273,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
     fastjet::PseudoJet p(_pythiaHS->event[ip].px(), _pythiaHS->event[ip].py(), _pythiaHS->event[ip].pz(),_pythiaHS->event[ip].e() ); 
     double eta = p.rapidity();
     if (fabs(eta)>maxEta) continue;
-    double corrtime = tvtx*1e9;
+    double corrtime = ths*1e9;
     if (fabs(eta)<minEta) corrtime = -999.;
     p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
