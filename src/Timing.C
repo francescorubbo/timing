@@ -16,7 +16,8 @@ int main(int argc, char* argv[]){
   Configuration settings(argc, argv);
   std::shared_ptr<Pythia8::Pythia> pythiaHS(new Pythia8::Pythia("../xmldoc",false));
   std::shared_ptr<Pythia8::Pythia> pythiaPU(new Pythia8::Pythia("../xmldoc",false));
-  settings.ConfigurePythia(pythiaHS.get(),pythiaPU.get());
+  settings.ConfigurePythiaSignal(pythiaHS.get());
+  settings.ConfigurePythiaPileup(pythiaPU.get());
     
   // TimingAnalysis
   TimingAnalysis analysis(pythiaHS.get(),pythiaPU.get(), settings);

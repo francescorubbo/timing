@@ -19,7 +19,8 @@ private:
   int getSeed(int seed);
 public:
   Configuration(int argc, char* argv[]);
-  void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs);
+  void ConfigurePythiaSignal(Pythia8::Pythia* hs);
+  void ConfigurePythiaPileup(Pythia8::Pythia* pu);
   void print();
   
   string outName;

@@ -156,7 +156,7 @@ void Configuration::print(){
   }
 }
 
-void Configuration::ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs){
+void Configuration::ConfigurePythiaSignal(Pythia8::Pythia* hs){
 
     hs->readString("Print:quiet=on");
     hs->readString("Random:setSeed = on"); 
@@ -215,9 +215,13 @@ void Configuration::ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs){
    else{ 
      throw std::invalid_argument("received invalid 'process'");
    }
+   return;
+}
 
+void Configuration::ConfigurePythiaPileup(Pythia8::Pythia* pu){
    //Setup the pileup
    pu->readString("Random:setSeed = on");   
+   std::stringstream ss;
    ss.clear(); 
    ss.str(""); 
    ss << "Random:seed = " << seed+1; 
@@ -228,7 +232,6 @@ void Configuration::ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs){
    pu->readString("PhaseSpace:pTHatMin  = .1");
    pu->readString("PhaseSpace:pTHatMax  = 20000");
    pu->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */);
-
    return;
 }
 
