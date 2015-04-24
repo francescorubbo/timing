@@ -180,6 +180,10 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     randomVariates=rnd->get(_dtype);
     fzvtxspread = randomVariates.first;
     ftvtxspread = randomVariates.second;
+
+    double zhs=0.0;
+    if(displace) //randomly distribute "ideally measured" hard-scatter vertex
+      zhs=fzvtxspread;
     
     //Loop over Pileup Events
     for (int iPU = 0; iPU <= NPV; ++iPU) {
@@ -212,8 +216,8 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
 	double cosheta = cosh(eta);
 
 	//calculate eta from displacement (minEta pos)
-	double radius = 1.2; // barrel radius=1.2 meter
-	double zbase = radius*sinh(minEta)*sgn(eta); //should eta be minEta?
+	static const double radius = 1.2; // barrel radius=1.2 meter
+	double zbase = radius*sinh(minEta)*sgn(eta)-zhs; //displace due to new location of Hard-Scatter Vertex
 	double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
 	if(fabs(corrEta)>5.0) continue;
 
@@ -235,11 +239,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::P
     }
 
     //determine random vertex position in z-t space                                                                                                                             
-    randomVariates=rnd->get(_dtype);
-    double zvtx = 0;
     double tvtx = 0;
     if(smear)
-      tvtx=randomVariates.second;
+      tvtx=rnd->get(_dtype).second;
     
     // Particle loop -----------------------------------------------------------
     for (int ip=0; ip<pythia8->event.size(); ++ip){
