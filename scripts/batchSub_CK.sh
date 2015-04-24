@@ -5,8 +5,8 @@
 [ "$USER" == "rubbo" ]    && WorkDir=/u/at/rubbo/nfs/Timing/trunk/
 [ "$USER" == "kurinsky" ] && WorkDir=/u/ki/kurinsky/ATLAS/
 # add similar line if you are not pnef
- 
-SubFileLoc=`pwd`/_batchSingleSub.sh
+
+SubFileLoc=`pwd`/_batchSingleSub_smear.sh
 DateSuffix=`date +%Y%m%d_%Hh%Mmin`
 
 echo '#!/bin/bash
@@ -28,10 +28,6 @@ shift
 shift
 echo Calling $cmd $*
 $cmd $*
-if [ $? -eq 1 ]
-then
-  exit 1
-fi
 cp -r $JOBFILEDIR/*.root $REALOUT
 echo COPYING to $REALOUT
 rm -rf $JOBFILEDIR
@@ -42,13 +38,14 @@ chmod u+x $SubFileLoc
 Process=4
 bunchsize="0.075"
 mode="VaryZT"
-for bunchsize in $bunchsizes
+psis="0 1 2 5 10"
+for psi in $psis
 do
     for mu in 80; do
 	Queue=short
 	nevents=200
 	njobs=50
-	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_${mu}_${bunchsize}_
+	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_smeared_${mu}_${psi}_
 	OutDirFinal=`pwd`/files/${DateSuffix}
 	mkdir -p `dirname $LogPrefix`
 	mkdir -p $OutDirFinal
@@ -63,14 +60,15 @@ do
 	        $SubFileLoc           \
 		${WorkDir} ${OutDir} ${OutDirFinal} Timing.sh  \
 		--Pileup $mu                 \
-		--OutFile ${OutDir}/Sample_mu_${mu}_${bunchsize}_nevents_${nevents}_job_${ii}.root \
+		--OutFile ${OutDir}/Sample_smeared_mu_${mu}_${psi}_nevents_${nevents}_job_${ii}.root \
 		--Proc ${Process} \
 		--NEvents ${nevents} \
 		--BunchSize ${bunchsize} \
 		--Seed ${ii} \
-		--${mode}
-	    
+		--SmearHS \
+		--VaryZT \
+		--Profile 1 \
+		--Psi $psi   
 	done
     done
 done
-

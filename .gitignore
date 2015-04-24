@@ -4,3 +4,7 @@
 **/*~
 **/*.root
 **/*.so
+scripts/files/*
+scripts/logs/*
+scripts/_*
+scripts/batch*_*

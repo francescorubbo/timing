@@ -5,7 +5,7 @@
 # Note: source setup.sh before make             #
 # --------------------------------------------- #
 
-CXXFLAGS =   -O2 -Wall 
+CXXFLAGS = -O2 -Wall -Wextra -std=c++0x -g
 
 .PHONY: clean debug all
 
@@ -14,8 +14,8 @@ all: setup Timing
 setup:
 	mkdir -p lib
 
-Timing:  lib/Timing.so lib/TimingAnalysis.so
-	$(CXX) lib/Timing.so lib/TimingAnalysis.so -o $@ \
+Timing:  lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so
+	$(CXX) lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so -o $@ \
 	$(CXXFLAGS) -Wno-shadow  \
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
@@ -39,6 +39,14 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 	-I./include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs` 
+
+lib/Configuration.so : src/Configuration.cc include/Configuration.h
+	$(CXX) -o $@ -c $<  \
+	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	-I./include \
+	-I$(PYTHIA8LOCATION)/include \
+	`root-config --cflags --libs`
 
 clean:
 	rm -rf Timing
