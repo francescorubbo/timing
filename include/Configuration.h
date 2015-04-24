@@ -7,6 +7,7 @@
 #include <sstream>
 #include "boost/program_options.hpp"
 #include "Pythia8/Pythia.h"
+#include "TimingAnalysis.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -23,11 +24,11 @@ struct PythiaSettings{
   }
   float bosonMass;
   float pthatmin;
-  flaot pthatmax;
+  float pthatmax;
   float seed;
 };
 
-void configurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaSettings settings);
+void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaSettings settings);
 
 struct Configuration{
   Configuration(int argc, char* argv[]);
@@ -49,6 +50,7 @@ struct Configuration{
   float  phi;
   float  psi;
   int    profile;
+  distribution dtype;
 };
 
 #endif

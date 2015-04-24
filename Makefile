@@ -41,12 +41,12 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 	`root-config --cflags --libs` 
 
 lib/Configuration.so : src/Configuration.cc include/Configuration.h
-        $(CXX) -o $@ -c $<  \
-        $(CXXFLAGS) -Wno-shadow -fPIC -shared \
-        `$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
-        -I./include \
-        -I$(PYTHIA8LOCATION)/include \
-        `root-config --cflags --libs`
+	$(CXX) -o $@ -c $<  \
+	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	-I./include \
+	-I$(PYTHIA8LOCATION)/include \
+	`root-config --cflags --libs`
 
 clean:
 	rm -rf Timing

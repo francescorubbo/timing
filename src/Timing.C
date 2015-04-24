@@ -19,14 +19,16 @@ int getSeed(int seed){
 int main(int argc, char* argv[]){
 
   Configuration q(argc, argv);
+
+  //obtain random seed or preset seed
   q.seed = getSeed(q.seed);
-  std::unique_ptr<Pythia8::Pythia> pythiaHS(new Pythia8::Pythia("../xmldoc",false));
-  std::unique_ptr<Pythia8::Pythia> pythiaPU(new Pythia8::Pythia("../xmldoc",false));
+  std::shared_ptr<Pythia8::Pythia> pythiaHS(new Pythia8::Pythia("../xmldoc",false));
+  std::shared_ptr<Pythia8::Pythia> pythiaPU(new Pythia8::Pythia("../xmldoc",false));
   PythiaSettings settings(q.boson_mass,q.pThatmin,q.pThatmax,q.seed);
-  ConfigurePythia(pythiaHS->get(),pythiaPU->get(),proc,settings);
+  ConfigurePythia(pythiaHS.get(),pythiaPU.get(),q.proc,settings);
     
   // TimingAnalysis
-  TimingAnalysis analysis(q.bunchsize,q.PUmode,q.HSmode,q.fDebug);
+  TimingAnalysis analysis(pythiaHS.get(),pythiaPU.get(),q.bunchsize,q.PUmode,q.HSmode,q.fDebug);
   analysis.SetOutName(q.outName);
   //seeds vertex generator, different seed than pythia
   analysis.Initialize(q.dtype,2*q.seed,q.phi,q.psi);
@@ -38,7 +40,7 @@ int main(int argc, char* argv[]){
   for (Int_t iev = 0; iev < q.nEvents; iev++) {
     if (iev%20==0)
       cout << "\tCurrent: " << iev << endl;
-    analysis.AnalyzeEvent(iev, pythia8.get(), pythia_MB.get(), q.pileup, q.minEta);
+    analysis.AnalyzeEvent(iev, q.pileup, q.minEta);
   }
   
   cout << "Timing Analysis Complete!" << endl;

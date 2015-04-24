@@ -106,7 +106,7 @@ Configuration::Configuration(int argc, char* argv[]){
       exit(2);
     }
     
-    distribution dtype=distribution::gaussian;
+    dtype=distribution::gaussian;
     if ((vm.count("ForceCK")>0) or (phi != 0) or (psi != 0)){
       useCK=true;
       if(profile == 0){
@@ -172,7 +172,7 @@ void printOptions(po::variables_map vm){
   }
 }
 
-void configurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaSettings settings){
+void ConfigurePythia(Pythia8::Pythia* pu, Pythia8::Pythia* hs, int proc, PythiaSettings settings){
 
     hs->readString("Print:quiet=on");
     hs->readString("Random:setSeed = on"); 

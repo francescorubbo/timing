@@ -37,27 +37,36 @@ double sgn(double val){
 }
 
 // Constructor 
-TimingAnalysis::TimingAnalysis(float bunchsize_, bool randomZ_, bool randomT_, bool smear_,bool Debug){
+TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, float bunchsize_, smearMode PU, smearMode HS, bool Debug){
 
-    fDebug=Debug;
-    if(fDebug) 
-      cout << "TimingAnalysis::TimingAnalysis Start " << endl;
+  if((pythiaHS != NULL) and (pythiaPU != NULL)){
+    _pythiaHS=pythiaHS;
+    _pythiaPU=pythiaPU;
+  }
+  else{
+    cerr << "Invalid Pythia pointer passed to TimingAnalysis" << endl;
+    exit(1);
+  }
 
-    ftest = 0;
-    fOutName = "test.root";
+  fDebug=Debug;
+  if(fDebug) 
+    cout << "TimingAnalysis::TimingAnalysis Start " << endl;
 
-    Bunchsize(bunchsize_);
-    PiluepMode(PU);
-    SignalMode(PU);
-
-    if(fDebug) 
-      cout << "TimingAnalysis::TimingAnalysis End " << endl;
-
-    //suppress fastjet banner
-    fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
+  ftest = 0;
+  fOutName = "test.root";
+  
+  Bunchsize(bunchsize_);
+  PileupMode(PU);
+  SignalMode(HS);
+  
+  if(fDebug) 
+    cout << "TimingAnalysis::TimingAnalysis End " << endl;
+  
+  //suppress fastjet banner
+  fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
 }
 
-void PileupMode(smearMode PU){
+void TimingAnalysis::PileupMode(smearMode PU){
   switch(PU){
   case Off:
     randomT=false;
@@ -77,8 +86,8 @@ void PileupMode(smearMode PU){
   }
 }
 
-void SignalMode(smearMode HS){
-  switch(PU){
+void TimingAnalysis::SignalMode(smearMode HS){
+  switch(HS){
   case Off:
     smear=false;
     displace=false;
@@ -155,143 +164,143 @@ void TimingAnalysis::Initialize(distribution dtype, int seed, double phi, double
 }
 
 // Analyze
-void TimingAnalysis::AnalyzeEvent(int ievt, Pythia8::Pythia* pythia8, Pythia8::Pythia* pythia_MB, int NPV,
-				  float minEta){
-    if(fDebug) 
-      cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
+void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta){
 
-    // -------------------------
-    if (!pythia8->next()) return;
-    if(fDebug) 
-      cout << "TimingAnalysis::AnalyzeEvent Event Number " << ievt << endl;
-
-    // reset branches 
-    ResetBranches();
+  if(fDebug) 
+    cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
+  
+  // -------------------------
+  if (!_pythiaHS->next()) return;
+  if(fDebug) 
+    cout << "TimingAnalysis::AnalyzeEvent Event Number " << ievt << endl;
+  
+  // reset branches 
+  ResetBranches();
+  
+  // new event-----------------------
+  fTEventNumber = ievt;
+  JetVector particlesForJets;
+  JetVector particlesForJets_np;
+  
+  //Pileup Loop
+  
+  fTNPV = NPV;
+  std::pair<double,double> randomVariates;  
+  randomVariates=rnd->get(_dtype);
+  fzvtxspread = randomVariates.first;
+  ftvtxspread = randomVariates.second;
+  
+  double zhs=0.0;
+  if(displace) //randomly distribute "ideally measured" hard-scatter vertex
+    zhs=fzvtxspread;
+  
+  //Loop over Pileup Events
+  for (int iPU = 0; iPU <= NPV; ++iPU) {
     
-    // new event-----------------------
-    fTEventNumber = ievt;
-    JetVector particlesForJets;
-    JetVector particlesForJets_np;
-
-    //Pileup Loop
-
-    fTNPV = NPV;
-    std::pair<double,double> randomVariates;  
+    //determine random vertex position in z-t space
     randomVariates=rnd->get(_dtype);
-    fzvtxspread = randomVariates.first;
-    ftvtxspread = randomVariates.second;
-
-    double zhs=0.0;
-    if(displace) //randomly distribute "ideally measured" hard-scatter vertex
-      zhs=fzvtxspread;
-    
-    //Loop over Pileup Events
-    for (int iPU = 0; iPU <= NPV; ++iPU) {
-      
-      //determine random vertex position in z-t space                                                                                                                                                     
-      randomVariates=rnd->get(_dtype);
-      double zvtx = 0;
-      double tvtx = 0;
-      if(randomZ)
-	zvtx = randomVariates.first;
-      if(randomT)
-	tvtx = randomVariates.second;
-      
-      //Loop over pileup particles
-      for (int i = 0; i < pythia_MB->event.size(); ++i) {
-
-	//skipping Leptons
-        if (!pythia_MB->event[i].isFinal()    ) continue;
-        if (fabs(pythia_MB->event[i].id())==12) continue;
-        if (fabs(pythia_MB->event[i].id())==14) continue;
-        if (fabs(pythia_MB->event[i].id())==13) continue;
-        if (fabs(pythia_MB->event[i].id())==16) continue;
-	
-	//Instantiate new pseudojet
-	PseudoJet p(pythia_MB->event[i].px(), pythia_MB->event[i].py(), pythia_MB->event[i].pz(),pythia_MB->event[i].e() ); 
-	
-	//extract event information
-	double eta = p.rapidity();
-	double sinheta = sinh(eta);
-	double cosheta = cosh(eta);
-
-	//calculate eta from displacement (minEta pos)
-	static const double radius = 1.2; // barrel radius=1.2 meter
-	double zbase = radius*sinh(minEta)*sgn(eta)-zhs; //displace due to new location of Hard-Scatter Vertex
-	double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
-	if(fabs(corrEta)>5.0) continue;
-
-	//calculate time measured relative to if event was at 0
-	double dist = (zbase-zvtx)*cosheta/sinheta;
-	double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
-	double refdist = zbase*cosh(corrEta)/sinh(corrEta);
-	double reftime = fabs(refdist)/LIGHTSPEED;
-	double corrtime = (time-reftime)*1e9;
-	if(fabs(corrEta)<minEta) 
-	  corrtime = -999.;
-
-	p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
-	
-	p.set_user_info(new TimingInfo(pythia_MB->event[i].id(),i,iPU,true,corrtime)); 
-	particlesForJets.push_back(p); 
-      }
-      if (!pythia_MB->next()) continue;
-    }
-
-    //determine random vertex position in z-t space                                                                                                                             
+    double zvtx = 0;
     double tvtx = 0;
-    if(smear)
-      tvtx=rnd->get(_dtype).second;
+    if(randomZ)
+      zvtx = randomVariates.first;
+    if(randomT)
+      tvtx = randomVariates.second;
     
-    // Particle loop -----------------------------------------------------------
-    for (int ip=0; ip<pythia8->event.size(); ++ip){
-      
-      if (!pythia8->event[ip].isFinal() )      continue;
-      //if (fabs(pythia8->event[ip].id())  ==11) continue;
-      if (fabs(pythia8->event[ip].id())  ==12) continue;
-      if (fabs(pythia8->event[ip].id())  ==13) continue;
-      if (fabs(pythia8->event[ip].id())  ==14) continue;
-      if (fabs(pythia8->event[ip].id())  ==16) continue;
+    //Loop over pileup particles
+    for (int i = 0; i < _pythiaPU->event.size(); ++i) {
 
-      fastjet::PseudoJet p(pythia8->event[ip].px(), pythia8->event[ip].py(), pythia8->event[ip].pz(),pythia8->event[ip].e() ); 
+      //skipping Leptons
+      if (!_pythiaPU->event[i].isFinal()    ) continue;
+      if (fabs(_pythiaPU->event[i].id())==12) continue;
+      if (fabs(_pythiaPU->event[i].id())==14) continue;
+      if (fabs(_pythiaPU->event[i].id())==13) continue;
+      if (fabs(_pythiaPU->event[i].id())==16) continue;
+      
+      //Instantiate new pseudojet
+      PseudoJet p(_pythiaPU->event[i].px(), _pythiaPU->event[i].py(), _pythiaPU->event[i].pz(),_pythiaPU->event[i].e() ); 
+      
+      //extract event information
       double eta = p.rapidity();
-      if (fabs(eta)>5.0) continue;
-      double corrtime = tvtx*1e9;
-      if (fabs(eta)<minEta) corrtime = -999.;
-      p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
-      p.set_user_info(new TimingInfo(pythia8->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
+      double sinheta = sinh(eta);
+      double cosheta = cosh(eta);
       
-      particlesForJets.push_back(p);
-      particlesForJets_np.push_back(p);
-
-    } // end particle loop -----------------------------------------------
-
-    fastjet::JetDefinition jetDef(fastjet::antikt_algorithm, 0.4, fastjet::E_scheme, fastjet::Best);
-    fastjet::AreaDefinition active_area(fastjet::active_area);
-    fastjet::ClusterSequenceArea clustSeq(particlesForJets, jetDef, active_area);
-
-    fastjet::GridMedianBackgroundEstimator bge(4.5,0.6);
-    bge.set_particles(particlesForJets);
-    fastjet::Subtractor subtractor(&bge);
-
-    JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
-    JetVector subtractedJets = subtractor(inclusiveJets);
-    Selector select_fwd = SelectorAbsRapRange(minEta,4.5);
-    JetVector selectedJets = select_fwd(subtractedJets);
-
-    FillTree(selectedJets);
-
-    fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
-    JetVector truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
-    JetVector selectedTruthJets = select_fwd(truthJets);
-    FillTruthTree(selectedTruthJets);
-
-    tT->Fill();
-
-    if(fDebug) 
-      cout << "TimingAnalysis::AnalyzeEvent End " << endl;
-
-    return;
+      //calculate eta from displacement (minEta pos)
+      static const double radius = 1.2; // barrel radius=1.2 meter
+      double zbase = radius*sinh(minEta)*sgn(eta)-zhs; //displace due to new location of Hard-Scatter Vertex
+      double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
+      if(fabs(corrEta)>5.0) continue;
+      
+      //calculate time measured relative to if event was at 0
+      double dist = (zbase-zvtx)*cosheta/sinheta;
+      double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
+      double refdist = zbase*cosh(corrEta)/sinh(corrEta);
+      double reftime = fabs(refdist)/LIGHTSPEED;
+      double corrtime = (time-reftime)*1e9;
+      if(fabs(corrEta)<minEta) 
+	corrtime = -999.;
+      
+      p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
+      
+      p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),i,iPU,true,corrtime)); 
+      particlesForJets.push_back(p); 
+    }
+    if (!_pythiaPU->next()) continue;
+  }
+  
+  //determine random time position for hard scatter
+  double tvtx = 0;
+  if(smear)
+    tvtx=rnd->get(_dtype).second;
+  
+  // Particle loop -----------------------------------------------------------
+  for (int ip=0; ip<_pythiaHS->event.size(); ++ip){
+    
+    if (!_pythiaHS->event[ip].isFinal() )      continue;
+    //if (fabs(_pythiaHS->event[ip].id())  ==11) continue;
+    if (fabs(_pythiaHS->event[ip].id())  ==12) continue;
+    if (fabs(_pythiaHS->event[ip].id())  ==13) continue;
+    if (fabs(_pythiaHS->event[ip].id())  ==14) continue;
+    if (fabs(_pythiaHS->event[ip].id())  ==16) continue;
+    
+    fastjet::PseudoJet p(_pythiaHS->event[ip].px(), _pythiaHS->event[ip].py(), _pythiaHS->event[ip].pz(),_pythiaHS->event[ip].e() ); 
+    double eta = p.rapidity();
+    if (fabs(eta)>5.0) continue;
+    double corrtime = tvtx*1e9;
+    if (fabs(eta)<minEta) corrtime = -999.;
+    p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
+    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
+    
+    particlesForJets.push_back(p);
+    particlesForJets_np.push_back(p);
+    
+  } // end particle loop -----------------------------------------------
+  
+  fastjet::JetDefinition jetDef(fastjet::antikt_algorithm, 0.4, fastjet::E_scheme, fastjet::Best);
+  fastjet::AreaDefinition active_area(fastjet::active_area);
+  fastjet::ClusterSequenceArea clustSeq(particlesForJets, jetDef, active_area);
+  
+  fastjet::GridMedianBackgroundEstimator bge(4.5,0.6);
+  bge.set_particles(particlesForJets);
+  fastjet::Subtractor subtractor(&bge);
+  
+  JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
+  JetVector subtractedJets = subtractor(inclusiveJets);
+  Selector select_fwd = SelectorAbsRapRange(minEta,4.5);
+  JetVector selectedJets = select_fwd(subtractedJets);
+  
+  FillTree(selectedJets);
+  
+  fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
+  JetVector truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
+  JetVector selectedTruthJets = select_fwd(truthJets);
+  FillTruthTree(selectedTruthJets);
+  
+  tT->Fill();
+  
+  if(fDebug) 
+    cout << "TimingAnalysis::AnalyzeEvent End " << endl;
+  
+  return;
 }
 
 // worker function to actually perform an analysis

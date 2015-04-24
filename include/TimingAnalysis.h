@@ -97,6 +97,9 @@ class TimingAnalysis{
   bool randomT;
   bool smear;
   bool displace;
+
+  Pythia8::Pythia *_pythiaHS;
+  Pythia8::Pythia *_pythiaPU;
   
   void DeclareBranches();
   void ResetBranches();
@@ -105,15 +108,15 @@ class TimingAnalysis{
   double ComputeTime(PseudoJet jet);
   
  public:
-  TimingAnalysis (float bunchsize_=0.075, smearMode PU=ZT, smearMode HS=ZT, bool Debug=false);
+  TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, float bunchsize_=0.075, smearMode PU=ZT, smearMode HS=ZT, bool Debug=false);
   ~TimingAnalysis ();
   
-  void AnalyzeEvent(int iEvt, Pythia8::Pythia *pythia8,  Pythia8::Pythia *pythia_MB, int NPV, float minEta);
+  void AnalyzeEvent(int iEvt, int NPV, float minEta);
   void Initialize(distribution dtype=gaussian,int seed=123, double phi=0, double psi=0);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}
-  void Bunchsize(float bunchsize_){bunchsize=(bunchsize_>0?:bunchsize_:0)}
+  void Bunchsize(float bunchsize_){bunchsize=(bunchsize_>0)?bunchsize_:0;}
   void PileupMode(smearMode PU);
   void SignalMode(smearMode HS);
   void SetOutName(string outname){fOutName = outname;}
