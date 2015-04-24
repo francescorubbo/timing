@@ -20,17 +20,14 @@
 #include "Pythia8/Pythia.h"
 #include "TH2F.h"
 
+#include "Configuration.h"
+#include "Definitions.h"
+
 using namespace std;
 using namespace fastjet;
 
 typedef vector<float> timingBranch;
 typedef vector<fastjet::PseudoJet> JetVector;
-
-enum distribution {gaussian, pseudoRectangular, crabKissingGaussian, crabKissingSquare};
-enum smearMode {Off,Z,T,ZT};
-
-const double LIGHTSPEED = 299792458.; 
-const double PI = 3.141592653589793238463;
 
 class TimingDistribution{
  private:

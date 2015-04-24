@@ -50,7 +50,6 @@ Configuration::Configuration(int argc, char* argv[]){
 	exit(0);
     }
 
-    printBanner();
     print();
 
     cout << "\t";

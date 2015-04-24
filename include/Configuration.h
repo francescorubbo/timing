@@ -7,7 +7,8 @@
 #include <sstream>
 #include "boost/program_options.hpp"
 #include "Pythia8/Pythia.h"
-#include "TimingAnalysis.h"
+
+#include "Definitions.h"
 
 using namespace std;
 namespace po = boost::program_options;
