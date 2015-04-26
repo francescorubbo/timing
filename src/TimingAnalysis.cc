@@ -84,7 +84,7 @@ void TimingAnalysis::PileupMode(smearMode PU){
     break;
   case ZT:
     randomT=true;
-    randomZ=false;
+    randomZ=true;
   }
 }
 
@@ -104,7 +104,7 @@ void TimingAnalysis::SignalMode(smearMode HS){
     break;
   case ZT:
     smear=true;
-    displace=false;
+    displace=true;
   }
 }
 
