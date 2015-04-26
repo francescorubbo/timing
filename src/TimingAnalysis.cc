@@ -239,6 +239,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       double time=corrected.first + tvtx;
       double corrEta=corrected.second;
       if(fabs(corrEta)>maxEta) continue; //if undetected, ignore
+      cout << corrEta << "\t" << time << endl;
 
       //get time from hs vertex to tracker
       CorrInfo HScorrected = ComputeTime(zhs,eta,minEta);
@@ -346,8 +347,8 @@ void TimingAnalysis::FillTruthTree(JetVector jets){
 
 CorrInfo TimingAnalysis::ComputeTime(float z, float eta, float mineta){
   static const double radius = 1.2;
-  double thetaMax = 2*arctan(exp(-mineta));
-  double theta = 2*arctan(exp(-eta));
+  double thetaMax = 2*atan(exp(-mineta));
+  double theta = 2*atan(exp(-eta));
   
   //z to center of detector as a function of eta inputs, which set geometry
   double zbase = radius/tan(thetaMax)*sgn(eta);
@@ -365,7 +366,7 @@ CorrInfo TimingAnalysis::ComputeTime(float z, float eta, float mineta){
     time=-999;
 
   //eta associated with same detector position and vertex at center of detector
-  double corrEta=-ln(tan(arctan(y/zbase)/2))
+  double corrEta=-log(tan(atan(ynew/zbase)/2));
   return make_pair(time,corrEta);
 }
 
@@ -383,10 +384,10 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet){
   return time;
 }
 
-bool Ignore(Particle &p){
+bool TimingAnalysis::Ignore(Pythia8::Particle &p){
   if (!p.isFinal() )      
     return true;
-  switch(fabs(p.id())){
+  switch(abs(p.id())){
   case 12:
   case 13:
   case 14:

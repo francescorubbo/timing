@@ -106,7 +106,7 @@ class TimingAnalysis{
   void FillTruthTree(JetVector jets);
   CorrInfo ComputeTime(float z, float eta, float mineta);
   double ComputeTime(PseudoJet jet);
-  bool Ignore(Particle &p);
+  bool Ignore(Pythia8::Particle &p);
 
   //void BinParticles(float binScale, JetVector input, JetVector output);
   

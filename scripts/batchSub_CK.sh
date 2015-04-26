@@ -65,7 +65,7 @@ do
 		--NEvents ${nevents} \
 		--BunchSize ${bunchsize} \
 		--Seed ${ii} \
-		--SmearHS \
+		--SmearHSZT \
 		--VaryZT \
 		--Profile 1 \
 		--Psi $psi   
