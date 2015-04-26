@@ -36,15 +36,16 @@ chmod u+x $SubFileLoc
 
 #----------------
 Process=4
-bunchsizes="0.10 0.125"
+bunchsize="0.075"
 mode="VaryZT"
-for bunchsize in $bunchsizes
+hsmodes="SmearHST SmearHSZT"
+for hsmode in $hsmodes
 do
     for mu in 80; do
 	Queue=short
 	nevents=200
 	njobs=50
-	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_smeared_${mu}_${bunchsize}_
+	LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_bsub_smeared_${mu}_${hsmode}_
 	OutDirFinal=`pwd`/files/${DateSuffix}
 	mkdir -p `dirname $LogPrefix`
 	mkdir -p $OutDirFinal
@@ -59,12 +60,12 @@ do
 	        $SubFileLoc           \
 		${WorkDir} ${OutDir} ${OutDirFinal} Timing.sh  \
 		--Pileup $mu                 \
-		--OutFile ${OutDir}/Sample_smeared_mu_${mu}_${bunchsize}_nevents_${nevents}_job_${ii}.root \
+		--OutFile ${OutDir}/Sample_smeared_mu_${mu}_${hsmode}_nevents_${nevents}_job_${ii}.root \
 		--Proc ${Process} \
 		--NEvents ${nevents} \
 		--BunchSize ${bunchsize} \
 		--Seed ${ii} \
-		--SmearHS \
+		--${hsmode} \
 		--${mode}
 	    
 	done

@@ -233,9 +233,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       
       //extract event information
       double eta = p.rapidity();
-
-      //extract event information
-      double eta = p.rapidity();
       double sinheta = sinh(eta);
       double cosheta = cosh(eta);
       
@@ -249,7 +246,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       double dist = (zbase-zvtx)*cosheta/sinheta;
       double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
       
-      double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow((zbase-zvtx),2))
+      double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow((zbase-zvtx),2));
       double reftime = fabs(refdist)/LIGHTSPEED;
       double corrtime = (time-reftime)*1e9;
       if(fabs(corrEta)<minEta) 
@@ -275,12 +272,15 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
 			 _pythiaHS->event[ip].e() ); 
     
     double eta = p.rapidity();
+    double sinheta = sinh(eta);
 
-    if (fabs(eta)>maxEta) continue;
+    //calculate eta from displacement (minEta pos)                                                                                               
+    static const double radius = 1.2; // barrel radius=1.2 meter                                                                                 
+    double zbase = radius*sinh(minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex                                           
+    double corrEta = asinh(zbase*sinheta/(zbase-zhs));
+    if (fabs(corrEta)>maxEta) continue;
     double corrtime = ths*1e9;
-    if (fabs(eta)<minEta) corrtime = -999.;
-    p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
-    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
+    if (fabs(corrEta)<minEta) corrtime = -999.;
     
     p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
     //0 for the primary vertex.
