@@ -234,22 +234,26 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       //extract event information
       double eta = p.rapidity();
 
-      //get time from vertex to tracker and eta as if event occurred at z=0
-      CorrInfo corrected=ComputeTime(zvtx,eta,minEta);
-      double time=corrected.first + tvtx;
-      double corrEta=corrected.second;
-      if(fabs(corrEta)>maxEta) continue; //if undetected, ignore
-      cout << corrEta << "\t" << time << endl;
-
-      //get time from hs vertex to tracker
-      CorrInfo HScorrected = ComputeTime(zhs,eta,minEta);
-      double corrtime;
-
-      //if eta not in forward tracker, no timing information
-      if(time != -999)
-	corrtime = (time - HScorrected.first)*1e9;
-      else
-	corrtime = time;
+      //extract event information
+      double eta = p.rapidity();
+      double sinheta = sinh(eta);
+      double cosheta = cosh(eta);
+      
+      //calculate eta from displacement (minEta pos)
+      static const double radius = 1.2; // barrel radius=1.2 meter
+      double zbase = radius*sinh(minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex
+      double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
+      if(fabs(corrEta)>maxEta) continue;
+      
+      //calculate time measured relative to if event was at 0
+      double dist = (zbase-zvtx)*cosheta/sinheta;
+      double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
+      
+      double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow((zbase-zvtx),2))
+      double reftime = fabs(refdist)/LIGHTSPEED;
+      double corrtime = (time-reftime)*1e9;
+      if(fabs(corrEta)<minEta) 
+	corrtime = -999.;
       
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
       
@@ -271,13 +275,12 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
 			 _pythiaHS->event[ip].e() ); 
     
     double eta = p.rapidity();
-    CorrInfo HScorrected = ComputeTime(zhs,eta,minEta);
-    double corrEta = HScorrected.second;
-    
-    if (fabs(corrEta)>maxEta) continue;
+
+    if (fabs(eta)>maxEta) continue;
     double corrtime = ths*1e9;
-    if (HScorrected.first == -999) 
-      corrtime = -999.;
+    if (fabs(eta)<minEta) corrtime = -999.;
+    p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
+    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
     
     p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
     //0 for the primary vertex.
@@ -343,31 +346,6 @@ void TimingAnalysis::FillTruthTree(JetVector jets){
     truejphi->push_back(jets[ijet].phi());
     truejtime->push_back(ComputeTime(jets[ijet]));
   }
-}
-
-CorrInfo TimingAnalysis::ComputeTime(float z, float eta, float mineta){
-  static const double radius = 1.2;
-  double thetaMax = 2*atan(exp(-mineta));
-  double theta = 2*atan(exp(-eta));
-  
-  //z to center of detector as a function of eta inputs, which set geometry
-  double zbase = radius/tan(thetaMax)*sgn(eta);
-  //distance to face associated with sign of eta with z offset
-  double znew=zbase-z;
-  
-  //length of particle track from actual vertex
-  double dist=znew*sqrt(1+pow(tan(theta),2));
-  //time assuming v=c
-  double time=dist/LIGHTSPEED;
-
-  //height along tracker of interaction (used for calculating corrected eta)
-  double ynew=zbase*tan(theta);
-  if(ynew > radius)
-    time=-999;
-
-  //eta associated with same detector position and vertex at center of detector
-  double corrEta=-log(tan(atan(ynew/zbase)/2));
-  return make_pair(time,corrEta);
 }
 
 double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet){
