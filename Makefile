@@ -14,8 +14,8 @@ all: setup Timing
 setup:
 	mkdir -p lib
 
-Timing:  lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so
-	$(CXX) lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so -o $@ \
+Timing:  lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so lib/TimingJetFinder.so
+	$(CXX) lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so lib/TimingJetFinder.so -o $@ \
 	$(CXXFLAGS) -Wno-shadow  \
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
@@ -41,6 +41,14 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 	`root-config --cflags --libs` 
 
 lib/Configuration.so : src/Configuration.cc include/Configuration.h
+	$(CXX) -o $@ -c $<  \
+	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	-I./include \
+	-I$(PYTHIA8LOCATION)/include \
+	`root-config --cflags --libs`
+
+lib/TimingJetFinder.so : src/TimingJetFinder.cc include/TimingJetFinder.h
 	$(CXX) -o $@ -c $<  \
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
 	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \

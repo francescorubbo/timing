@@ -38,6 +38,7 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
+
 }
 
 void TimingAnalysis::PileupMode(smearMode PU){
@@ -123,7 +124,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
 
    _minEta=minEta;
    _maxEta=maxEta;
-   finder.reset(new JetFinder(minEta,maxEta));
+   finder.reset(new TimingJetFinder(minEta,maxEta));
 
    // for shit you want to do by hand
    DeclareBranches();
@@ -268,10 +269,10 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   } // end particle loop -----------------------------------------------
 
   JetVector selectedJets,selectedTruthJets;
-  finder->SelectJets(particlesForJets,selectedJets);
-  finder->SelectJets(particlesForJet_np,selectedTruthJets);  
-
+  finder->selectJets(particlesForJets,selectedJets);
   FillTree(selectedJets);
+  
+  finder->selectJets(particlesForJets_np,selectedTruthJets);  
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();

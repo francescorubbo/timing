@@ -1,7 +1,7 @@
 //-*-c++-*-
 
-#ifndef JETFINDER_H
-#define JETFINDER_H
+#ifndef TIMINGJETFINDER_H
+#define TIMINGJETFINDER_H
 
 #include <map>
 #include <vector>
@@ -16,11 +16,12 @@
 #include "fastjet/tools/GridMedianBackgroundEstimator.hh"
 #include "fastjet/tools/Subtractor.hh"
 
+using namespace std;
 using namespace fastjet;
 
 typedef vector<fastjet::PseudoJet> JetVector;
 
-class JetFinder{
+class TimingJetFinder{
 private:
   double _pixelSize;
   double _R;
@@ -34,10 +35,10 @@ private:
   unique_ptr<Selector> select_fwd;
 
  public:
-  JetFinder(double etaMin, double etaMax, double pixelSize=1e-4, double R=0.4);
+  TimingJetFinder(double etaMin, double etaMax, double pixelSize=1e-4, double R=0.4);
   void PixelSize(double pixelSize);
-  void selectJets(JetVector particlesForJets, JetVector selectedJets);
-  void selectSegmentedJets(JetVector particlesForJets, JetVector selectedJets);
+  void selectJets(JetVector &particlesForJets, JetVector &selectedJets);
+  void selectSegmentedJets(JetVector &particlesForJets, JetVector &selectedJets);
 };
 
 #endif

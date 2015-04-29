@@ -23,7 +23,7 @@
 
 #include "Configuration.h"
 #include "Definitions.h"
-#include "JetFinder.h"
+#include "TimingJetFinder.h"
 #include "TimingInfo.h"
 
 using namespace std;
@@ -43,9 +43,6 @@ class TimingDistribution{
 
   double _gauss_norm;
   double _square_norm;
-  
-  float _minEta;
-  float _maxEta;
 
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
@@ -69,9 +66,11 @@ class TimingAnalysis{
   TFile *tF;
   TTree *tT;
   unique_ptr<TimingDistribution> rnd;
-  unique_ptr<JetFinder> finder;
+  unique_ptr<TimingJetFinder> finder;
   
   float bunchsize;
+  float _minEta;
+  float _maxEta;
   distribution _dtype;
   double psi;
   double phi;
@@ -111,6 +110,10 @@ class TimingAnalysis{
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet);
   bool Ignore(Pythia8::Particle &p);
+
+  //Jet selection functions
+  void selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets);
+  void selectSegmentedJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets);
   
  public:
   TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q);
@@ -118,6 +121,10 @@ class TimingAnalysis{
   
   void AnalyzeEvent(int iEvt, int NPV);
   void Initialize(float minEta, float maxEta, distribution dtype=gaussian,int seed=123);
+
+  //Jet selection functions
+  void selectJets(JetVector &particlesForJets, JetVector &selectedJets);
+  void selectSegmentedJets(JetVector &particlesForJets, JetVector &selectedJets);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}
