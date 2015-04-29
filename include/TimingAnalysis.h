@@ -4,30 +4,31 @@
 #define  TimingAnalysis_H
 
 #include <vector>
+#include <memory>
+#include <random>
+#include <set>
 #include <math.h>
 #include <string>
-#include <random>
 #include <iomanip>
-#include <math.h>
-#include <vector>
 #include <stdlib.h>
 #include <stdio.h>
-#include <memory>
+#include <sstream>
 
-#include "fastjet/PseudoJet.hh"  
+#include "Pythia8/Pythia.h"
+
+#include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
-#include "Pythia8/Pythia.h"
 #include "TH2F.h"
 
 #include "Configuration.h"
 #include "Definitions.h"
+#include "JetFinder.h"
+#include "TimingInfo.h"
 
 using namespace std;
-using namespace fastjet;
 
 typedef vector<float> timingBranch;
-typedef vector<fastjet::PseudoJet> JetVector;
 
 class TimingDistribution{
  private:
@@ -43,6 +44,9 @@ class TimingDistribution{
   double _gauss_norm;
   double _square_norm;
   
+  float _minEta;
+  float _maxEta;
+
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
 
@@ -65,6 +69,7 @@ class TimingAnalysis{
   TFile *tF;
   TTree *tT;
   unique_ptr<TimingDistribution> rnd;
+  unique_ptr<JetFinder> finder;
   
   float bunchsize;
   distribution _dtype;
@@ -106,15 +111,13 @@ class TimingAnalysis{
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet);
   bool Ignore(Pythia8::Particle &p);
-
-  //void BinParticles(float binScale, JetVector input, JetVector output);
   
  public:
   TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q);
   ~TimingAnalysis ();
   
-  void AnalyzeEvent(int iEvt, int NPV, float minEta, float maxEta);
-  void Initialize(distribution dtype=gaussian,int seed=123);
+  void AnalyzeEvent(int iEvt, int NPV);
+  void Initialize(float minEta, float maxEta, distribution dtype=gaussian,int seed=123);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}

@@ -1,29 +1,4 @@
-#include <math.h>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <random>
-#include <set>
-
-#include "TFile.h"
-#include "TTree.h"
-#include "TClonesArray.h"
-#include "TParticle.h"
-#include "TDatabasePDG.h"
-#include "TMath.h"
-#include "TF2.h"
-
 #include "TimingAnalysis.h"
-#include "TimingInfo.h"
-
-#include "fastjet/PseudoJet.hh"  
-#include "fastjet/Selector.hh"
-#include "fastjet/ClusterSequenceArea.hh"
-#include "fastjet/tools/GridMedianBackgroundEstimator.hh"
-#include "fastjet/tools/Subtractor.hh"
-
-#include "Pythia8/Pythia.h"
-#include "TROOT.h"
 
 using namespace std;
 
@@ -63,9 +38,6 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
-  
-  //suppress fastjet banner
-  fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
 }
 
 void TimingAnalysis::PileupMode(smearMode PU){
@@ -142,12 +114,16 @@ TimingAnalysis::~TimingAnalysis(){
 }
 
 // Begin method
-void TimingAnalysis::Initialize(distribution dtype, int seed){
+void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, int seed){
    // Declare TTree
    tF = new TFile(fOutName.c_str(), "RECREATE");
    tT = new TTree("tree", "Event Tree for Timing");
    rnd.reset(new TimingDistribution(bunchsize,seed,phi,psi));
    _dtype=dtype;
+
+   _minEta=minEta;
+   _maxEta=maxEta;
+   finder.reset(new JetFinder(minEta,maxEta));
 
    // for shit you want to do by hand
    DeclareBranches();
@@ -174,7 +150,7 @@ void TimingAnalysis::Initialize(distribution dtype, int seed){
 }
 
 // Analyze
-void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta){
+void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
   if(fDebug) 
     cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
@@ -238,9 +214,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       
       //calculate eta from displacement (minEta pos)
       static const double radius = 1.2; // barrel radius=1.2 meter
-      double zbase = radius*sinh(minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex
+      double zbase = radius*sinh(_minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex
       double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
-      if(fabs(corrEta)>maxEta) continue;
+      if(fabs(corrEta)>_maxEta) continue;
       
       //calculate time measured relative to if event was at 0
       double dist = (zbase-zvtx)*cosheta/sinheta;
@@ -249,7 +225,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow((zbase-zvtx),2));
       double reftime = fabs(refdist)/LIGHTSPEED;
       double corrtime = (time-reftime)*1e9;
-      if(fabs(corrEta)<minEta) 
+      if(fabs(corrEta)< _minEta) 
 	corrtime = -999.;
       
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
@@ -276,11 +252,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
 
     //calculate eta from displacement (minEta pos)                                                                                               
     static const double radius = 1.2; // barrel radius=1.2 meter                                                                                 
-    double zbase = radius*sinh(minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex                                           
+    double zbase = radius*sinh(_minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex                                           
     double corrEta = asinh(zbase*sinheta/(zbase-zhs));
-    if (fabs(corrEta)>maxEta) continue;
+    if (fabs(corrEta)>_maxEta) continue;
     double corrtime = ths*1e9;
-    if (fabs(corrEta)<minEta) corrtime = -999.;
+    if (fabs(corrEta)<_minEta) corrtime = -999.;
     
     p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
     //0 for the primary vertex.
@@ -290,25 +266,12 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
     particlesForJets_np.push_back(p);
     
   } // end particle loop -----------------------------------------------
-  
-  fastjet::JetDefinition jetDef(fastjet::antikt_algorithm, 0.4, fastjet::E_scheme, fastjet::Best);
-  fastjet::AreaDefinition active_area(fastjet::active_area);
-  fastjet::ClusterSequenceArea clustSeq(particlesForJets, jetDef, active_area);
-  
-  fastjet::GridMedianBackgroundEstimator bge(4.5,0.6);
-  bge.set_particles(particlesForJets);
-  fastjet::Subtractor subtractor(&bge);
-  
-  JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
-  JetVector subtractedJets = subtractor(inclusiveJets);
-  Selector select_fwd = SelectorAbsRapRange(minEta,4.5);
-  JetVector selectedJets = select_fwd(subtractedJets);
-  
+
+  JetVector selectedJets,selectedTruthJets;
+  finder->SelectJets(particlesForJets,selectedJets);
+  finder->SelectJets(particlesForJet_np,selectedTruthJets);  
+
   FillTree(selectedJets);
-  
-  fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
-  JetVector truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
-  JetVector selectedTruthJets = select_fwd(truthJets);
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
