@@ -35,10 +35,9 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   SignalMode(q.HSmode);
   Psi(q.psi);
   Phi(q.phi);
-  
+
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
-
 }
 
 void TimingAnalysis::PileupMode(smearMode PU){
@@ -122,32 +121,47 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    rnd.reset(new TimingDistribution(bunchsize,seed,phi,psi));
    _dtype=dtype;
 
-   _minEta=minEta;
-   _maxEta=maxEta;
-   finder.reset(new TimingJetFinder(minEta,maxEta));
+   _etaMin= (etaMin > 0) ? etaMin : 0;
+  if(etaMax <= etaMin){
+    cerr << "Invalid Eta Limits " << etaMin << " -> " << etaMax << "Passed to TimingJetFinder" << endl;
+    exit(20);
+  }
+  _etaMax= etaMax;
+  _pixelSize = 1e-6;
 
-   // for shit you want to do by hand
-   DeclareBranches();
+  const double R=0.4;
+  const double grid_spacing(0.6);
 
-   jpt = new timingBranch();  
-   jphi = new timingBranch();  
-   jeta = new timingBranch();  
-   jtime = new timingBranch();
+  //suppress fastjet banner
+  fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
 
-   j0clpt = new timingBranch();  
-   j0clphi = new timingBranch();  
-   j0cleta = new timingBranch();  
-   j0cltime = new timingBranch();  
-   j0cltruth = new timingBranch();
-   
-   truejpt = new timingBranch();  
-   truejphi = new timingBranch();  
-   truejeta = new timingBranch();  
-   truejtime = new timingBranch();  
-
-   ResetBranches();
-   
-   return;
+  jetDef.reset(new JetDefinition(fastjet::antikt_algorithm, R, fastjet::E_scheme, fastjet::Best));
+  active_area.reset(new AreaDefinition(fastjet::active_area));
+  bge.reset(new GridMedianBackgroundEstimator(_etaMax, grid_spacing));
+  select_fwd.reset(new Selector(SelectorAbsRapRange(_etaMin,_etaMax)));
+  
+  // for shit you want to do by hand
+  DeclareBranches();
+  
+  jpt = new timingBranch();  
+  jphi = new timingBranch();  
+  jeta = new timingBranch();  
+  jtime = new timingBranch();
+  
+  j0clpt = new timingBranch();  
+  j0clphi = new timingBranch();  
+  j0cleta = new timingBranch();  
+  j0cltime = new timingBranch();  
+  j0cltruth = new timingBranch();
+  
+  truejpt = new timingBranch();  
+  truejphi = new timingBranch();  
+  truejeta = new timingBranch();  
+  truejtime = new timingBranch();  
+  
+  ResetBranches();
+  
+  return;
 }
 
 // Analyze
@@ -269,10 +283,12 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   } // end particle loop -----------------------------------------------
 
   JetVector selectedJets,selectedTruthJets;
-  finder->selectJets(particlesForJets,selectedJets);
+  fastjet::ClusterSequenceArea clustSeq(particlesForJets, *jetDef, *active_area);
+  selectJets(particlesForJets,selectedJets);
   FillTree(selectedJets);
   
-  finder->selectJets(particlesForJets_np,selectedTruthJets);  
+  fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
+  selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
@@ -281,6 +297,27 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     cout << "TimingAnalysis::AnalyzeEvent End " << endl;
   
   return;
+}
+
+void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
+  try{
+    bge->set_particles(particlesForJets);
+    
+    fastjet::Subtractor subtractor(bge.get());    
+    JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
+    JetVector subtractedJets = subtractor(inclusiveJets);
+    
+    selectedJets.clear();
+    selectedJets = (*select_fwd)(subtractedJets);
+  }
+  catch(...){
+    cerr << "Error caught here" << endl;
+    exit(20);
+  }
+}
+
+void TimingAnalysis::selectSegmentedJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
+  selectJets(particlesForJets,clustSeq,selectedJets);
 }
 
 // worker function to actually perform an analysis

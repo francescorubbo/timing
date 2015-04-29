@@ -21,12 +21,20 @@
 #include "TTree.h"
 #include "TH2F.h"
 
+#include "fastjet/PseudoJet.hh"  
+#include "fastjet/Selector.hh"
+#include "fastjet/ClusterSequenceArea.hh"
+#include "fastjet/tools/GridMedianBackgroundEstimator.hh"
+#include "fastjet/tools/Subtractor.hh"
+
 #include "Configuration.h"
 #include "Definitions.h"
-#include "TimingJetFinder.h"
 #include "TimingInfo.h"
 
 using namespace std;
+using namespace fastjet;
+
+typedef vector<fastjet::PseudoJet> JetVector;
 
 typedef vector<float> timingBranch;
 
@@ -66,11 +74,19 @@ class TimingAnalysis{
   TFile *tF;
   TTree *tT;
   unique_ptr<TimingDistribution> rnd;
-  unique_ptr<TimingJetFinder> finder;
+
+  //these need to be ptrs because constructor must be called
+  unique_ptr<JetDefinition> jetDef;
+  unique_ptr<AreaDefinition> active_area;
+  unique_ptr<GridMedianBackgroundEstimator> bge;
+  unique_ptr<Selector> select_fwd;
   
   float bunchsize;
   float _minEta;
   float _maxEta;
+  double _R;
+  double _pixelSize;
+
   distribution _dtype;
   double psi;
   double phi;
@@ -121,10 +137,6 @@ class TimingAnalysis{
   
   void AnalyzeEvent(int iEvt, int NPV);
   void Initialize(float minEta, float maxEta, distribution dtype=gaussian,int seed=123);
-
-  //Jet selection functions
-  void selectJets(JetVector &particlesForJets, JetVector &selectedJets);
-  void selectSegmentedJets(JetVector &particlesForJets, JetVector &selectedJets);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}
