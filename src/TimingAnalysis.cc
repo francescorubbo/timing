@@ -121,12 +121,12 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    rnd.reset(new TimingDistribution(bunchsize,seed,phi,psi));
    _dtype=dtype;
 
-   _etaMin= (etaMin > 0) ? etaMin : 0;
-  if(etaMax <= etaMin){
-    cerr << "Invalid Eta Limits " << etaMin << " -> " << etaMax << "Passed to TimingJetFinder" << endl;
+   _minEta= (minEta > 0) ? minEta : 0;
+  if(maxEta <= minEta){
+    cerr << "Invalid Eta Limits " << minEta << " -> " << maxEta << "Passed to TimingAnalysis::Initialize" << endl;
     exit(20);
   }
-  _etaMax= etaMax;
+  _maxEta= maxEta;
   _pixelSize = 1e-6;
 
   const double R=0.4;
@@ -137,8 +137,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
 
   jetDef.reset(new JetDefinition(fastjet::antikt_algorithm, R, fastjet::E_scheme, fastjet::Best));
   active_area.reset(new AreaDefinition(fastjet::active_area));
-  bge.reset(new GridMedianBackgroundEstimator(_etaMax, grid_spacing));
-  select_fwd.reset(new Selector(SelectorAbsRapRange(_etaMin,_etaMax)));
+  bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
+  select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
   
   // for shit you want to do by hand
   DeclareBranches();
@@ -284,7 +284,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
   JetVector selectedJets,selectedTruthJets;
   fastjet::ClusterSequenceArea clustSeq(particlesForJets, *jetDef, *active_area);
-  selectJets(particlesForJets,selectedJets);
+  selectJets(particlesForJets,clustSeq,selectedJets);
   FillTree(selectedJets);
   
   fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
