@@ -41,7 +41,8 @@ mode="VaryZT"
 psis="0 1 2 5 10"
 for psi in $psis
 do
-    for mu in 80; do
+    for mu in 80 140 200 
+    do
 	Queue=short
 	nevents=200
 	njobs=50
@@ -67,7 +68,7 @@ do
 		--Seed ${ii} \
 		--SmearHSZT \
 		--VaryZT \
-		--Profile 1 \
+		--Profile 0 \
 		--Psi $psi   
 	done
     done
