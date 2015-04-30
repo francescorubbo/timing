@@ -99,6 +99,7 @@ class TimingAnalysis{
   bool randomT;
   bool smear;
   bool displace;
+  bool segmentation;
 
   Pythia8::Pythia *_pythiaHS;
   Pythia8::Pythia *_pythiaPU;

@@ -36,6 +36,11 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   Psi(q.psi);
   Phi(q.phi);
 
+  if(q.segmentation){
+    segmentation=true;
+    _pixelSize=q.pixelSize;
+  }
+
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
 }

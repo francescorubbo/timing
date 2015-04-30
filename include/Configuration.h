@@ -39,7 +39,10 @@ public:
   float  phi;
   float  psi;
 
+  float pixelSize;
+
   bool   useCK;
+  bool   segmentation;
   smearMode HSmode;
   smearMode PUmode;
   distribution dtype;  

@@ -34,12 +34,12 @@ Configuration::Configuration(int argc, char* argv[]){
       ("Psi",     po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("MaxEta",    po::value<float>(&maxEta)->default_value(4.3), "Minimum Pseudorapidity for Particles")
+      ("PixelSize", po::value<float>(&pixelSize)->default_value(0), "Pixel Size for Segmentation (in microns)")
       ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
-      ("BosonMass", po::value<float>(&boson_mass)->default_value(1500), "Z' or W' mass in GeV")
-      ;
-
+      ("BosonMass", po::value<float>(&boson_mass)->default_value(1500), "Z' or W' mass in GeV");
+    
     po::options_description desc;
     desc.add(gen_desc).add(sim_flag).add(sim_desc);
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -110,6 +110,16 @@ Configuration::Configuration(int argc, char* argv[]){
       cout << "Using Gaussian Bunch Profile" << endl;
 
     seed=getSeed(seed);
+    
+    if(pixelSize > 1e-3){
+      pixelSize*=1e-6;
+      segmentation=true;
+      cout << "\tUsing Finite Segmentation" << endl;
+    }
+    else{
+      segmentation=false;
+      cout << "\tUsing Infinite Segmentation" << endl;
+    }
 
     cout << endl;
 }
