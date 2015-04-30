@@ -30,31 +30,31 @@ void TrackerPixel::detect(fastjet::PseudoJet &p){
 
 JetVector& TrackerPixel::getParticles(){
 
-  double pt=0;
-  double time=0;
-  double frac=0;
-  double num = static_cast<double>(particles.size());
+  detParticles.clear();
+
+  double pt,time;
+  int id;
+  bool pileup;
+
+  int snum=0;
   for(auto itr = particles.begin(); itr != particles.end(); ++itr){
-    pt+=itr->pt();
-    time+=itr->user_info<TimingInfo>().time();
-    frac+=itr->user_info<TimingInfo>().pileup() ? 1.0 : 0.0;
+    
+    if(snum == 0)
+      pt=itr->pt();
+    else
+      pt=1e-100;
+
+    time=itr->user_info<TimingInfo>().time();
+    pileup=itr->user_info<TimingInfo>().pileup();
+    id=itr->user_info<TimingInfo>().pdg_id();
+
+    fastjet::PseudoJet p;
+    p.reset_PtYPhiM(pt, _eta, _phi);
+    p.set_user_info(new TimingInfo(id,snum,pixelID,pileup,time));
+    detParticles.push_back(p);
+    
+    snum++;
   }
-
-  if(num > 1){
-    time /= num;
-    frac /= num;
-  }
-
-  //need to change type of TimingInfo to accomodate fraction
-  bool tparticle=false;
-  if(frac > 0.5)
-    tparticle=true;
-  
-  fastjet::PseudoJet p;
-  p.reset_PtYPhiM(pt, _eta, _phi);
-  p.set_user_info(new TimingInfo(pixelID,num,0,tparticle,time)); 
-
-  detParticles.push_back(p);
 
   return detParticles;
 }

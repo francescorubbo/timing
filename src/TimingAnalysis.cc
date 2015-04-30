@@ -291,11 +291,17 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
   JetVector selectedJets,selectedTruthJets;
   fastjet::ClusterSequenceArea clustSeq(particlesForJets, *jetDef, *active_area);
-  selectJets(particlesForJets,clustSeq,selectedJets);
+  if(segmentation)
+    selectSegmentedJets(particlesForJets,clustSeq,selectedJets); 
+  else
+    selectJets(particlesForJets,clustSeq,selectedJets);
   FillTree(selectedJets);
   
   fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
-  selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
+  if(segmentation)
+    selectSegmentedJets(particlesForJets_np,clustSeqTruth,selectedTruthJets); 
+  else
+    selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
