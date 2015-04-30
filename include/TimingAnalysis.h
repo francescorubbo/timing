@@ -3,29 +3,12 @@
 #ifndef  TimingAnalysis_H
 #define  TimingAnalysis_H
 
-#include <vector>
-#include <memory>
-#include <random>
-#include <set>
-#include <math.h>
-#include <string>
-#include <iomanip>
-#include <stdlib.h>
-#include <stdio.h>
 #include <sstream>
-
-#include "Pythia8/Pythia.h"
 
 #include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TH2F.h"
-
-#include "fastjet/PseudoJet.hh"  
-#include "fastjet/Selector.hh"
-#include "fastjet/ClusterSequenceArea.hh"
-#include "fastjet/tools/GridMedianBackgroundEstimator.hh"
-#include "fastjet/tools/Subtractor.hh"
 
 #include "Configuration.h"
 #include "Definitions.h"
@@ -33,8 +16,6 @@
 
 using namespace std;
 using namespace fastjet;
-
-typedef vector<fastjet::PseudoJet> JetVector;
 
 typedef vector<float> timingBranch;
 

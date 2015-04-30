@@ -6,8 +6,6 @@
 #include <iostream>
 #include <sstream>
 #include "boost/program_options.hpp"
-#include "Pythia8/Pythia.h"
-
 #include "Definitions.h"
 
 using namespace std;

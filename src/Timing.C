@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <memory>
 
-#include "Pythia8/Pythia.h"
+#include "Definitions.h"
 #include "TimingAnalysis.h"
 #include "Configuration.h"
 
