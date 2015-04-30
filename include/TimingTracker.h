@@ -4,6 +4,7 @@
 #define TIMINGTRACKER_H
 
 #include "Definitions.h"
+#include "TimingInfo.h"
 
 using namespace std;
 
@@ -24,17 +25,17 @@ class TrackerPixel{
   TrackerPixel(double xMin, double yMin, double radius, double pixelSize);
   void detect(fastjet::PseudoJet &p);
   JetVector& getParticles();
-}
+};
 
 class TimingTracker{
  private:
   double _pixelSize;
   double _radius;
-  map<pixelCoordinate,unique_ptr<TrackerPixel> > pixels;
+  map<pixelCoordinate,shared_ptr<TrackerPixel> > pixels;
   pixelCoordinate getPixel(double eta, double phi);
  public:
   TimingTracker(double pixelSize, double radius);
   void DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles);
-}
+};
 
 #endif

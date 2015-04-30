@@ -140,7 +140,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
    select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
  
-   tracker.reset(new TimingTracker(_pixelSize,_minEta,_maxEta,1.2));
+   tracker.reset(new TimingTracker(_pixelSize,1.2));
   
    // for shit you want to do by hand
    DeclareBranches();
