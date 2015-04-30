@@ -65,18 +65,18 @@ pixelCoordinate getPixel(double eta, double phi){
   return make_pair(static_cast<int>(floor((xy.first)/_pixelSize)),static_cast<int>(floor((xy.second)/_pixelSize)));
 }
 
-TimingTracker::TimingTracker(double pixelSize, double minEta, double maxEta, double radius){
+TimingTracker::TimingTracker(double pixelSize, double radius){
   if(pixelSize < 1e-6){
     cerr << "Invalid pixel size " << pixelSize << endl;
     exit(30);
   }
   _pixelSize=pixelSize;
-  _minEta=minEta;
-  _maxEta=maxEta;
   _radius=radius;
 }
 
 void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles){
+
+  pixels.reset();
 
   //fill tracker
   pixelCoordinate pi;

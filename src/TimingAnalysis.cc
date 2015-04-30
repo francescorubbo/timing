@@ -122,46 +122,48 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    _dtype=dtype;
 
    _minEta= (minEta > 0) ? minEta : 0;
-  if(maxEta <= minEta){
-    cerr << "Invalid Eta Limits " << minEta << " -> " << maxEta << "Passed to TimingAnalysis::Initialize" << endl;
-    exit(20);
-  }
-  _maxEta= maxEta;
-  _pixelSize = 1e-6;
-
-  const double R=0.4;
-  const double grid_spacing(0.6);
-
-  //suppress fastjet banner
-  fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
-
-  jetDef.reset(new JetDefinition(fastjet::antikt_algorithm, R, fastjet::E_scheme, fastjet::Best));
-  active_area.reset(new AreaDefinition(fastjet::active_area));
-  bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
-  select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
+   if(maxEta <= minEta){
+     cerr << "Invalid Eta Limits " << minEta << " -> " << maxEta << "Passed to TimingAnalysis::Initialize" << endl;
+     exit(20);
+   }
+   _maxEta= maxEta;
+   _pixelSize = 1e-6;
+   
+   const double R=0.4;
+   const double grid_spacing(0.6);
+   
+   //suppress fastjet banner
+   fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
+   
+   jetDef.reset(new JetDefinition(fastjet::antikt_algorithm, R, fastjet::E_scheme, fastjet::Best));
+   active_area.reset(new AreaDefinition(fastjet::active_area));
+   bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
+   select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
+ 
+   tracker.reset(new TimingTracker(_pixelSize,_minEta,_maxEta,1.2));
   
-  // for shit you want to do by hand
-  DeclareBranches();
-  
-  jpt = new timingBranch();  
-  jphi = new timingBranch();  
-  jeta = new timingBranch();  
-  jtime = new timingBranch();
-  
-  j0clpt = new timingBranch();  
-  j0clphi = new timingBranch();  
-  j0cleta = new timingBranch();  
-  j0cltime = new timingBranch();  
-  j0cltruth = new timingBranch();
-  
-  truejpt = new timingBranch();  
-  truejphi = new timingBranch();  
-  truejeta = new timingBranch();  
-  truejtime = new timingBranch();  
-  
-  ResetBranches();
-  
-  return;
+   // for shit you want to do by hand
+   DeclareBranches();
+   
+   jpt = new timingBranch();  
+   jphi = new timingBranch();  
+   jeta = new timingBranch();  
+   jtime = new timingBranch();
+   
+   j0clpt = new timingBranch();  
+   j0clphi = new timingBranch();  
+   j0cleta = new timingBranch();  
+   j0cltime = new timingBranch();  
+   j0cltruth = new timingBranch();
+   
+   truejpt = new timingBranch();  
+   truejphi = new timingBranch();  
+   truejeta = new timingBranch();  
+   truejtime = new timingBranch();  
+   
+   ResetBranches();
+   
+   return;
 }
 
 // Analyze
@@ -317,7 +319,9 @@ void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSeq
 }
 
 void TimingAnalysis::selectSegmentedJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
-  selectJets(particlesForJets,clustSeq,selectedJets);
+  JetVector detectorParticles;
+  tracker->DetectedParticles(particlesForJets,detectorParticles);
+  selectJets(detectorParticles,clustSeq,selectedJets);
 }
 
 // worker function to actually perform an analysis

@@ -29,13 +29,11 @@ class TrackerPixel{
 class TimingTracker{
  private:
   double _pixelSize;
-  double _maxEta;
-  double _minEta;
   double _radius;
   map<pixelCoordinate,unique_ptr<TrackerPixel> > pixels;
   pixelCoordinate getPixel(double eta, double phi);
  public:
-  TimingTracker(double pixelSize, double minEta, double maxEta, double radius);
+  TimingTracker(double pixelSize, double radius);
   void DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles);
 }
 

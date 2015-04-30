@@ -13,6 +13,7 @@
 #include "Configuration.h"
 #include "Definitions.h"
 #include "TimingInfo.h"
+#include "TimingTracker.h"
 
 using namespace std;
 using namespace fastjet;
@@ -61,6 +62,7 @@ class TimingAnalysis{
   unique_ptr<AreaDefinition> active_area;
   unique_ptr<GridMedianBackgroundEstimator> bge;
   unique_ptr<Selector> select_fwd;
+  unique_ptr<TimingTracker> tracker;
   
   float bunchsize;
   float _minEta;
