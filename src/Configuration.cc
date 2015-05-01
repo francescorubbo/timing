@@ -2,10 +2,11 @@
 
 Configuration::Configuration(int argc, char* argv[]){
 
-    HSmode =smearMode::Off;
-    PUmode =smearMode::Off;
+    HSmode =smearMode::ZT;
+    PUmode =smearMode::ZT;
     useCK     =false;
     int profile;
+    int timing;
 
     po::options_description gen_desc("Allowed options");
     gen_desc.add_options()
@@ -16,12 +17,14 @@ Configuration::Configuration(int argc, char* argv[]){
 
     po::options_description sim_flag("Simulation Flags");
     sim_flag.add_options()
+      ("FixZT",     "Fix both Z and Time of Vertex of Pileup")
       ("VaryZ",     "Vary only Z Vertex of Pileup")
       ("VaryT",     "Vary only Vertex Time of Pileup")
       ("VaryZT",    "Vary both Z and Time of Vertex of Pileup")
+      ("noSmearHS", "Smear Hard Scatter Vertex in Time")
       ("SmearHST",  "Smear Hard Scatter Vertex in Time")
       ("SmearHSZ",  "Smear Hard Scatter Vertex in Z (correcting time)")
-      ("SmearHSZT",  "Smear Hard Scatter Vertex in Time and Z (correcting time)")
+      ("SmearHSZT", "Smear Hard Scatter Vertex in Time and Z (correcting time)")
       ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0");
 
     po::options_description sim_desc("Simulation Settings");
@@ -30,8 +33,9 @@ Configuration::Configuration(int argc, char* argv[]){
       ("Pileup",    po::value<int>(&pileup)->default_value(80), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
       ("Profile",   po::value<int>(&profile)->default_value(0), "Bunch Profile Type:\n - 0: Gaussian\n - 1: PseudoRectangular")
-      ("Phi",     po::value<float>(&phi)->default_value(0), "Phi Parameter, Crab-Kissing PDF")
-      ("Psi",     po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
+      ("JetTiming", po::value<int>(&timing)->default_value(0), "Bunch Profile Type:\n - 0: Highest-pT\n - 1: Central Particle\n - 2: Mean Particle Time\n - 3: Robust Mean Particle Time")
+      ("Phi",       po::value<float>(&phi)->default_value(0), "Phi Parameter, Crab-Kissing PDF")
+      ("Psi",       po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("MaxEta",    po::value<float>(&maxEta)->default_value(4.3), "Minimum Pseudorapidity for Particles")
       ("PixelSize", po::value<float>(&pixelSize)->default_value(0), "Pixel Size for Segmentation (in microns)")
@@ -65,8 +69,14 @@ Configuration::Configuration(int argc, char* argv[]){
       cout <<"Smearing Hard-Scatter Timing and Z (corrected time)" << endl;
       HSmode=smearMode::ZT;
     }
-    else
+    else if(vm.count("noSmearHS")>0){
       cout <<"No Hard-Scatter Smearing" << endl;
+      HSmode=smearMode::Off;
+    }
+    else{
+      cout <<"Smearing Hard-Scatter Timing and Z (corrected time)" << endl;
+      HSmode=smearMode::ZT;
+    }
 
     cout << "\t";
     if (vm.count("VaryZ")>0){
@@ -81,8 +91,14 @@ Configuration::Configuration(int argc, char* argv[]){
       cout <<"Varying Z and T of Pileup vertex" <<endl;
       PUmode=smearMode::ZT;
     }
-    else
+    else if (vm.count("FixZT")>0){
       cout <<"No Pileup Smearing" << endl;
+      PUmode=smearMode::Off;
+    }
+    else{
+      cout <<"Varying Z and T of Pileup vertex" <<endl;
+      PUmode=smearMode::ZT;
+    }
 
     if((profile < 0) or (profile > 1)){
       cerr << "ERROR: Invalid profile \"" << profile << "\", choices are Gaussian (0) and PseudoRectangular (1)" << endl;
@@ -121,6 +137,28 @@ Configuration::Configuration(int argc, char* argv[]){
       cout << "\tUsing Infinite Segmentation" << endl;
     }
 
+    switch(timing){
+    case timingMode::highestPT:
+      cout << "\tUsing time of highest pT particle" << endl;
+      timemode=highestPT;
+      break;
+    case timingMode::centralParticle:
+      cout << "\tUsing time of central particle" << endl;
+      timemode=highestPT;
+      break;
+    case timingMode::mean:
+      cout << "\tUsing mean of particle times" << endl;
+      timemode=highestPT;
+      break;
+    case timingMode::robustMean:
+      cout << "\tUsing robust mean of particle times" << endl;
+      timemode=robustMean;
+      break;
+    default:
+      cerr << "Invalid timing mode " << timing << endl;
+      exit(1);
+    }
+    
     cout << endl;
 }
 

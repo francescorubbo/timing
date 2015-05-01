@@ -23,6 +23,7 @@
 #include "fastjet/tools/Subtractor.hh"
 
 enum distribution {gaussian, pseudoRectangular, crabKissingGaussian, crabKissingSquare};
+enum timingMode {highestPT,centralParticle,mean,robustMean};
 enum smearMode {Off,Z,T,ZT};
 
 const double LIGHTSPEED = 299792458.;

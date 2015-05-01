@@ -43,6 +43,8 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   else
     segmentation=false;
 
+  timeMode=q.timemode;
+
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
 }
@@ -387,39 +389,57 @@ void TimingAnalysis::FillTruthTree(JetVector jets){
 
 double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
   double time=0;
-  
-  //use central particle timing if studying segmentation
-  if(segmentation){
-    float mindist = 1;
+  float mindist = 1;
+  float maxpt = 0;
+  double pnum=0;
 
-    double jetEta = jet.eta();
-    double jetPhi = jet.phi();
+  abstime=0;
+  double jetEta = jet.eta();
+  double jetPhi = jet.phi();
 
-    for (unsigned int i =0; i< jet.constituents().size(); i++){
-      double eta = jet.constituents()[i].eta();
-      double phi = jet.constituents()[i].phi();
-      
-      //only use timing from ghost particles
-      if(jet.constituents()[i].user_info<TimingInfo>().pixel_id() > -1){
-	double dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
+  double pt,eta,phi,dist;
+
+  for (unsigned int i =0; i< jet.constituents().size(); i++){
+    //if segmentation, only use timing from ghost particles    
+    if((not segmentation) or (jet.constituents()[i].user_info<TimingInfo>().pixel_id() > -1)){
+      switch(timeMode){
+      case highestPT:
+	pt = jet.constituents()[i].pt();
+	if(pt>maxpt){
+	  maxpt = pt;
+	  time = jet.constituents()[i].user_info<TimingInfo>().time();
+	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
+	}//endif
+	break;
+      case centralParticle:
+	eta = jet.constituents()[i].eta();
+	phi = jet.constituents()[i].phi();
+	dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
 	if(dist < mindist){
 	  mindist = dist;
 	  time = jet.constituents()[i].user_info<TimingInfo>().time();
 	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
 	}
+	break;
+      case mean:
+	time+=jet.constituents()[i].user_info<TimingInfo>().time();
+	abstime+=jet.constituents()[i].user_info<TimingInfo>().abstime();
+	pnum++;
+      case robustMean: //just mean at the moment
+	time+=jet.constituents()[i].user_info<TimingInfo>().time();
+	abstime+=jet.constituents()[i].user_info<TimingInfo>().abstime();
+	pnum++;
+	break;
+      default:
+	cerr << "ComputeTime called with invalid Timing Mode" << endl;
+	return -999;
       }
     }
   }
-  else{ //use max-pt timing
-    float maxpt = 0.;
-    for (unsigned int i=0; i<jet.constituents().size(); i++){
-      float pt = jet.constituents()[i].pt();
-      if(pt>maxpt){
-	maxpt = pt;
-	time = jet.constituents()[i].user_info<TimingInfo>().time();
-	abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
-      }//endif
-    }//endloop
+
+  if((timeMode == mean) or (timeMode == robustMean)){
+    time/=pnum;
+    abstime/=pnum;
   }
 
   return time;

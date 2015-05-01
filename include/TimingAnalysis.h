@@ -105,6 +105,7 @@ class TimingAnalysis{
   bool smear;
   bool displace;
   bool segmentation;
+  timingMode timeMode;
 
   Pythia8::Pythia *_pythiaHS;
   Pythia8::Pythia *_pythiaPU;

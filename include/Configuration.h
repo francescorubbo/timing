@@ -45,6 +45,7 @@ public:
   bool   segmentation;
   smearMode HSmode;
   smearMode PUmode;
+  timingMode timemode;
   distribution dtype;  
 };
 
