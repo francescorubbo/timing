@@ -18,10 +18,10 @@ TrackerPixel::TrackerPixel(double xMin, double yMin, double radius, double pixel
   _eta=(ll.first+rr.first)/2;
   _phi=(ll.second+ll.second)/2;
 
-  int width = static_cast<int>(radius/pixelSize);
-  int xnum=static_cast<int>(xMin/pixelSize)+width;
-  int ynum=static_cast<int>(yMin/pixelSize)+width;
-  pixelID = xnum+ynum*2*width;
+  double width =floor(radius/pixelSize);
+  double xnum =floor(xMin/pixelSize)+width;
+  double ynum =floor(yMin/pixelSize)+width;
+  pixelID = xnum+ynum*width;
 }
 
 void TrackerPixel::detect(fastjet::PseudoJet &p){
@@ -32,27 +32,20 @@ JetVector& TrackerPixel::getParticles(){
 
   detParticles.clear();
 
-  double pt,time;
-  int id;
-  bool pileup;
-
-  int snum=0;
+  static const double pt=1e-10;
+  unsigned long snum=0;
   for(auto itr = particles.begin(); itr != particles.end(); ++itr){
-    
-    if(snum == 0)
-      pt=itr->pt();
-    else
-      pt=1e-100;
-
-    time=itr->user_info<TimingInfo>().time();
-    pileup=itr->user_info<TimingInfo>().pileup();
-    id=itr->user_info<TimingInfo>().pdg_id();
-
     fastjet::PseudoJet p;
     p.reset_PtYPhiM(pt, _eta, _phi);
-    p.set_user_info(new TimingInfo(id,snum,pixelID,pileup,time));
-    detParticles.push_back(p);
-    
+    p.set_user_info(new TimingInfo(itr->user_info<TimingInfo>().pdg_id(),
+				   itr->user_info<TimingInfo>().pythia_id(),
+				   itr->user_info<TimingInfo>().pv(),
+				   itr->user_info<TimingInfo>().pileup(),
+				   itr->user_info<TimingInfo>().time(),
+				   itr->user_info<TimingInfo>().abstime(),
+				   pixelID,
+				   snum));
+    detParticles.push_back(p);    
     snum++;
   }
 
@@ -97,4 +90,10 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
       detectedParticles.push_back(*particle);
   }
   
+}
+
+void TimingTracker::AddDetectedParticles(JetVector &truthParticles){
+  JetVector ghostParticles;
+  DetectedParticles(truthParticles,ghostParticles);
+  truthParticles.insert(truthParticles.end(),ghostParticles.begin(),ghostParticles.end());
 }

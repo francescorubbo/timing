@@ -84,17 +84,22 @@ class TimingAnalysis{
   timingBranch *jphi;
   timingBranch *jeta;
   timingBranch *jtime;
+  timingBranch *jabstime;
   timingBranch *j0clpt;
   timingBranch *j0clphi;
   timingBranch *j0cleta;
   timingBranch *j0cltime;
+  timingBranch *j0clabstime;
   timingBranch *j0cltruth;
+  timingBranch *j0clpixelID;
+  timingBranch *j0clpixelNum;
   
   timingBranch *truejpt;
   timingBranch *truejphi;
   timingBranch *truejeta;
   timingBranch *truejtime;
-  
+  timingBranch *truejabstime;
+
   bool randomZ;
   bool randomT;
   bool smear;
@@ -108,12 +113,11 @@ class TimingAnalysis{
   void ResetBranches();
   void FillTree(JetVector jets);
   void FillTruthTree(JetVector jets);
-  double ComputeTime(PseudoJet jet);
+  double ComputeTime(PseudoJet jet, double &abstime);
   bool Ignore(Pythia8::Particle &p);
 
   //Jet selection functions
   void selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets);
-  void selectSegmentedJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets);
   
  public:
   TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q);
