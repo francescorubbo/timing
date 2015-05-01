@@ -425,11 +425,6 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
 	time+=jet.constituents()[i].user_info<TimingInfo>().time();
 	abstime+=jet.constituents()[i].user_info<TimingInfo>().abstime();
 	pnum++;
-      case robustMean: //just mean at the moment
-	time+=jet.constituents()[i].user_info<TimingInfo>().time();
-	abstime+=jet.constituents()[i].user_info<TimingInfo>().abstime();
-	pnum++;
-	break;
       default:
 	cerr << "ComputeTime called with invalid Timing Mode" << endl;
 	return -999;
@@ -437,7 +432,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
     }
   }
 
-  if((timeMode == mean) or (timeMode == robustMean)){
+  if(timeMode == mean){
     time/=pnum;
     abstime/=pnum;
   }

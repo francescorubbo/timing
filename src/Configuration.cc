@@ -33,7 +33,7 @@ Configuration::Configuration(int argc, char* argv[]){
       ("Pileup",    po::value<int>(&pileup)->default_value(80), "Number of Additional Interactions")
       ("BunchSize", po::value<float>(&bunchsize)->default_value(0.075), "Size of Proton Bunches")
       ("Profile",   po::value<int>(&profile)->default_value(0), "Bunch Profile Type:\n - 0: Gaussian\n - 1: PseudoRectangular")
-      ("JetTiming", po::value<int>(&timing)->default_value(0), "Bunch Profile Type:\n - 0: Highest-pT\n - 1: Central Particle\n - 2: Mean Particle Time\n - 3: Robust Mean Particle Time")
+      ("JetTiming", po::value<int>(&timing)->default_value(0), "Bunch Profile Type:\n - 0: Highest-pT\n - 1: Central Particle\n - 2: Mean Particle Time")
       ("Phi",       po::value<float>(&phi)->default_value(0), "Phi Parameter, Crab-Kissing PDF")
       ("Psi",       po::value<float>(&psi)->default_value(0), "Psi Parameter, Crab-Kissing PDF")
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
@@ -127,7 +127,7 @@ Configuration::Configuration(int argc, char* argv[]){
 
     seed=getSeed(seed);
     
-    if(pixelSize > 1e-3){
+    if(pixelSize > 1e-1){
       pixelSize*=1e-6;
       segmentation=true;
       cout << "\tUsing Finite Segmentation" << endl;
@@ -149,10 +149,6 @@ Configuration::Configuration(int argc, char* argv[]){
     case timingMode::mean:
       cout << "\tUsing mean of particle times" << endl;
       timemode=highestPT;
-      break;
-    case timingMode::robustMean:
-      cout << "\tUsing robust mean of particle times" << endl;
-      timemode=robustMean;
       break;
     default:
       cerr << "Invalid timing mode " << timing << endl;
