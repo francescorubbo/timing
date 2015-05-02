@@ -21,7 +21,8 @@ TrackerPixel::TrackerPixel(double xMin, double yMin, double radius, double pixel
   double width =floor(radius/pixelSize);
   double xnum =floor(xMin/pixelSize)+width;
   double ynum =floor(yMin/pixelSize)+width;
-  pixelID = xnum+ynum*width;
+  pixelID_forward = xnum+ynum*width+1; //add 1 such that all IDs > 0
+  pixelID_backward = -pixelID_forward;
 }
 
 void TrackerPixel::detect(fastjet::PseudoJet &p){
@@ -33,10 +34,25 @@ JetVector& TrackerPixel::getParticles(){
   detParticles.clear();
 
   static const double pt=1e-10;
+  unsigned long fnum=0;
+  unsigned long bnum=0;
   unsigned long snum=0;
+
   for(auto itr = particles.begin(); itr != particles.end(); ++itr){
     fastjet::PseudoJet p;
-    p.reset_PtYPhiM(pt, _eta, _phi);
+    double newEta=_eta;
+    double pixelID=pixelID_forward;
+    if(itr->eta() < 0){
+      newEta*=-1;
+      pixelID=pixelID_backward;
+      snum=bnum;
+      bnum++;
+    }
+    else{
+      snum=fnum;
+      fnum++;
+    }
+    p.reset_PtYPhiM(pt, newEta, _phi);
     p.set_user_info(new TimingInfo(itr->user_info<TimingInfo>().pdg_id(),
 				   itr->user_info<TimingInfo>().pythia_id(),
 				   itr->user_info<TimingInfo>().pv(),
@@ -46,7 +62,6 @@ JetVector& TrackerPixel::getParticles(){
 				   pixelID,
 				   snum));
     detParticles.push_back(p);    
-    snum++;
   }
 
   return detParticles;

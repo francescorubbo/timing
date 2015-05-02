@@ -20,7 +20,8 @@ class TrackerPixel{
   JetVector detParticles;
   double _phi;
   double _eta;
-  double pixelID;
+  double pixelID_forward;
+  double pixelID_backward;
  public:
   TrackerPixel(double xMin, double yMin, double radius, double pixelSize);
   void detect(fastjet::PseudoJet &p);

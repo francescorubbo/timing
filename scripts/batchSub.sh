@@ -36,10 +36,11 @@ chmod u+x $SubFileLoc
 
 Process=4
 bunchsize="0.075"
-psis="0 1 2 5"
-mus="80 140 200"
-pixelSizes="50 100 150 200"
+psis="0"
+mus="80"
+pixelSizes="0 50"
 profiles="0 1"
+timeModes="0 1"
 Queue=short
 nevents=200
 njobs=50
@@ -56,6 +57,7 @@ echo "Psi - "$psis
 echo "Mu  - "$mus
 echo "PixelSize - "$pixelSizes
 echo "Profile - "$profiles
+echo "JetTiming - "$timeModes
 echo "Bunchsize - "$bunchsize
 echo "HSMode - "$HSMode
 echo "PUMode - "$PUMode
@@ -64,27 +66,30 @@ for psi in $psis ; do
     for mu in $mus ; do
 	for profile in $profiles ; do
 	    for pixelSize in $pixelSizes ; do
-		LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_${mu}_${psi}_${nevents}_${profile}_px-${pixelSize}
-		mkdir -p `dirname $LogPrefix`
-		echo $LogPrefix
-		
-		for (( ii=1; ii<=$njobs; ii++ )) ;  do
-		    OutDir=/scratch/${DateSuffix}_${ii}/
+		for tm in $timeModes ; do
+		    LogPrefix=`pwd`/logs/${DateSuffix}/${DateSuffix}_${mu}_${psi}_${nevents}_${profile}_px-${pixelSize}_time-${tm}
+		    mkdir -p `dirname $LogPrefix`
+		    echo $LogPrefix
 		    
-		    bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log \
-			$SubFileLoc ${WorkDir} ${OutDir} ${OutDirFinal} \
-			Timing.sh  \
-			--Pileup $mu                 \
-			--OutFile ${OutDir}/Sample_mu-${mu}_psi-${psi}_nevents-${nevents}_prof-${profile}_px-${pixelSize}_job-${ii}.root \
-			--Proc ${Process} \
-			--NEvents ${nevents} \
-			--BunchSize ${bunchsize} \
-			--Seed ${ii} \
-			--${HSMode} \
-			--${PUMode} \
-			--Profile $profile \
-			--Psi $psi   \
-			--PixelSize $pixelSize
+		    for (( ii=1; ii<=$njobs; ii++ )) ;  do
+			OutDir=/scratch/${DateSuffix}_${ii}/
+			
+			bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log \
+			    $SubFileLoc ${WorkDir} ${OutDir} ${OutDirFinal} \
+			    Timing.sh  \
+			    --Pileup $mu                 \
+			    --OutFile ${OutDir}/Sample_mu-${mu}_psi-${psi}_nevents-${nevents}_prof-${profile}_px-${pixelSize}_time-${tm}_job-${ii}.root \
+			    --Proc ${Process} \
+			    --NEvents ${nevents} \
+			    --BunchSize ${bunchsize} \
+			    --Seed ${ii} \
+			    --${HSMode} \
+			    --${PUMode} \
+			    --Profile $profile \
+			    --Psi $psi   \
+			    --PixelSize $pixelSize \
+			    --JetTiming ${tm}
+		    done
 		done
 	    done
 	done

@@ -14,7 +14,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
 	    const bool & pileup_in,
 	    const double & time_in,
 	    const double & abstime_in,
-	    const double & pixel_id_in=-1,
+	    const double & pixel_id_in=0,
 	    const int & pixel_num_in=-1) 
    :_pdg_id(pdg_id_in),
     _pythia_id(pythia_id_in), 
