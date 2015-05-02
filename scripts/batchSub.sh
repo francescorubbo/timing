@@ -36,9 +36,9 @@ chmod u+x $SubFileLoc
 
 Process=4
 bunchsize="0.075"
-psis="0"
-mus="80"
-pixelSizes="0 50"
+psis="0 5"
+mus="80 140 200"
+pixelSizes="0 50 100 200"
 profiles="0 1"
 timeModes="0 1"
 Queue=short
