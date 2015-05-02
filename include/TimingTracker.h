@@ -25,7 +25,7 @@ class TrackerPixel{
  public:
   TrackerPixel(double xMin, double yMin, double radius, double pixelSize);
   void detect(fastjet::PseudoJet &p);
-  JetVector& getParticles();
+  void getParticles(JetVector &detParticles);
 };
 
 class TimingTracker{

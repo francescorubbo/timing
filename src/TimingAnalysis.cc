@@ -141,7 +141,6 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
      exit(20);
    }
    _maxEta= maxEta;
-   _pixelSize = 1e-6;
    
    const double R=0.4;
    const double grid_spacing(0.6);
@@ -156,7 +155,6 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
  
    tracker.reset(new TimingTracker(_pixelSize,1.2));
   
-   // for shit you want to do by hand
    DeclareBranches();
    
    jpt = new timingBranch();  
@@ -401,7 +399,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
 
   for (unsigned int i =0; i< jet.constituents().size(); i++){
     //if segmentation, only use timing from ghost particles    
-    if((not segmentation) or (jet.constituents()[i].user_info<TimingInfo>().pixel_id() > -1)){
+    if((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()){
       switch(timeMode){
       case highestPT:
 	pt = jet.constituents()[i].pt();
@@ -425,6 +423,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
 	time+=jet.constituents()[i].user_info<TimingInfo>().time();
 	abstime+=jet.constituents()[i].user_info<TimingInfo>().abstime();
 	pnum++;
+	break;
       default:
 	cerr << "ComputeTime called with invalid Timing Mode" << endl;
 	return -999;

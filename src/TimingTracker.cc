@@ -29,9 +29,7 @@ void TrackerPixel::detect(fastjet::PseudoJet &p){
   particles.push_back(p);
 }
 
-JetVector& TrackerPixel::getParticles(){
-
-  detParticles.clear();
+void TrackerPixel::getParticles(JetVector &detParticles){
 
   static const double pt=1e-10;
   unsigned long fnum=0;
@@ -63,8 +61,6 @@ JetVector& TrackerPixel::getParticles(){
 				   snum));
     detParticles.push_back(p);    
   }
-
-  return detParticles;
 }
 
 pixelCoordinate TimingTracker::getPixel(double eta, double phi){
@@ -97,18 +93,12 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
     pixels[pi]->detect(*particle);
   }
 
-  detectedParticles.clear();
-
   for(auto pixel = pixels.begin(); pixel != pixels.end(); ++pixel){
-    JetVector particles=pixel->second->getParticles();
-    for(auto particle = particles.begin(); particle != particles.end(); ++particle)
-      detectedParticles.push_back(*particle);
+    pixel->second->getParticles(detectedParticles);
   }
   
 }
 
 void TimingTracker::AddDetectedParticles(JetVector &truthParticles){
-  JetVector ghostParticles;
-  DetectedParticles(truthParticles,ghostParticles);
-  truthParticles.insert(truthParticles.end(),ghostParticles.begin(),ghostParticles.end());
+  DetectedParticles(truthParticles,truthParticles);
 }

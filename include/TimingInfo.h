@@ -33,6 +33,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
   double pv() const { return _pv;}  
   double time() const { return _time;}
   double abstime() const { return _abstime;}
+  bool isGhost() const { return (_pixel_id != 0); }
  protected:
   int _pdg_id;         // the associated pdg id
   int _pythia_id;  // index in pythia.event
