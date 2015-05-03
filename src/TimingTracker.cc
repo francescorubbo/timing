@@ -1,8 +1,11 @@
 #include "TimingTracker.h"
 
 coordinate xy_to_EtaPhi(double x, double y, double radius){
-  double phi = atan(y/x);
-  return make_pair(asinh(radius*cos(phi)/x),phi);
+  double phi = atan2(y,x);
+  phi = (phi < 0) ? phi+2*PI : phi;
+  double eta=asinh(radius*cos(phi)/x);
+  eta = (eta < 0) ? -eta : eta;
+  return make_pair(eta,phi);
 }
 
 coordinate EtaPhi_to_xy(double eta, double phi, double radius){

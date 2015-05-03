@@ -3,6 +3,8 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#define _USE_MATH_DEFINES
+
 #include <utility>
 #include <vector>
 #include <memory>
@@ -27,7 +29,7 @@ enum timingMode {highestPT,centralParticle,mean};
 enum smearMode {Off,Z,T,ZT};
 
 const double LIGHTSPEED = 299792458.;
-const double PI = 3.141592653589793238463;
+const double PI = M_PI;
 
 typedef std::pair<double,double> CorrInfo; // (time,eta)
 typedef std::vector<fastjet::PseudoJet> JetVector;
