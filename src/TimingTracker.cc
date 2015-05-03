@@ -1,21 +1,21 @@
 #include "TimingTracker.h"
 
-coordinate xy_to_EtaPhi(double x, double y, double radius){
+coordinate xy_to_EtaPhi(double x, double y, double z){
   double phi = atan2(y,x);
   phi = (phi < 0) ? phi+2*PI : phi;
-  double eta=asinh(radius*cos(phi)/x);
+  double eta=asinh(z*cos(phi)/x);
   eta = (eta < 0) ? -eta : eta;
   return make_pair(eta,phi);
 }
 
-coordinate EtaPhi_to_xy(double eta, double phi, double radius){
-  double height=radius/sinh(eta);
+coordinate EtaPhi_to_xy(double eta, double phi, double z){
+  double height=z/sinh(eta);
   return make_pair(height*cos(phi),height*sin(phi));
 }
 
-TrackerPixel::TrackerPixel(double xMin, double yMin, double radius, double pixelSize){
-  coordinate ll = xy_to_EtaPhi(xMin,yMin,radius);
-  coordinate rr = xy_to_EtaPhi(xMin+pixelSize,yMin+pixelSize,radius);
+TrackerPixel::TrackerPixel(double xMin, double yMin, double radius, double zbase, double pixelSize){
+  coordinate ll = xy_to_EtaPhi(xMin,yMin,zbase);
+  coordinate rr = xy_to_EtaPhi(xMin+pixelSize,yMin+pixelSize,zbase);
 
   //eta and phi are average of top right and lower left corner values
   _eta=(ll.first+rr.first)/2;
@@ -67,17 +67,18 @@ void TrackerPixel::getParticles(JetVector &detParticles){
 }
 
 pixelCoordinate TimingTracker::getPixel(double eta, double phi){
-  coordinate xy = EtaPhi_to_xy(eta,phi,_radius);
+  coordinate xy = EtaPhi_to_xy(eta,phi,_zbase);
   return make_pair(static_cast<int>(floor((xy.first)/_pixelSize)),static_cast<int>(floor((xy.second)/_pixelSize)));
 }
 
-TimingTracker::TimingTracker(double pixelSize, double radius){
+TimingTracker::TimingTracker(double pixelSize, double radius, double zbase){
   if(pixelSize < 1e-7){
     cerr << "Invalid pixel size " << pixelSize << endl;
     exit(30);
   }
   _pixelSize=pixelSize;
   _radius=radius;
+  _zbase=zbase;
 }
 
 void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles){
@@ -91,7 +92,7 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
     if(pixels.count(pi) == 0){
       double xMin = static_cast<double>(pi.first)*_pixelSize;
       double yMin = static_cast<double>(pi.second)*_pixelSize;
-      pixels[pi].reset(new TrackerPixel(xMin,yMin,_radius,_pixelSize));
+      pixels[pi].reset(new TrackerPixel(xMin,yMin,_radius,_zbase,_pixelSize));
     }
     pixels[pi]->detect(*particle);
   }
