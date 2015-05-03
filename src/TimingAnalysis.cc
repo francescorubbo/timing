@@ -39,6 +39,7 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   if(q.segmentation){
     segmentation=true;
     _pixelSize=q.pixelSize;
+    tracker.reset(new TimingTracker(_pixelSize,1.2));
   }
   else
     segmentation=false;
@@ -153,8 +154,6 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
    select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
  
-   tracker.reset(new TimingTracker(_pixelSize,1.2));
-  
    DeclareBranches();
    
    jpt = new timingBranch();  

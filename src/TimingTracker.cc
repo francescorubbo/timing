@@ -69,7 +69,7 @@ pixelCoordinate TimingTracker::getPixel(double eta, double phi){
 }
 
 TimingTracker::TimingTracker(double pixelSize, double radius){
-  if(pixelSize < 1e-6){
+  if(pixelSize < 1e-7){
     cerr << "Invalid pixel size " << pixelSize << endl;
     exit(30);
   }
