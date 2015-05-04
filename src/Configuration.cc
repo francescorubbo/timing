@@ -144,11 +144,11 @@ Configuration::Configuration(int argc, char* argv[]){
       break;
     case timingMode::centralParticle:
       cout << "\tUsing time of central particle" << endl;
-      timemode=highestPT;
+      timemode=centralParticle;
       break;
     case timingMode::mean:
       cout << "\tUsing mean of particle times" << endl;
-      timemode=highestPT;
+      timemode=mean;
       break;
     default:
       cerr << "Invalid timing mode " << timing << endl;
