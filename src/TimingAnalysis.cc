@@ -337,16 +337,24 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
   try{
     bge->set_particles(particlesForJets);
-    
+
     fastjet::Subtractor subtractor(bge.get());    
     JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
     JetVector subtractedJets = subtractor(inclusiveJets);
+
+    JetVector allSelectedJets;
+    allSelectedJets.clear();
+    allSelectedJets = (*select_fwd)(subtractedJets);
     
+    //select jets with pt > 10
     selectedJets.clear();
-    selectedJets = (*select_fwd)(subtractedJets);
+    for(auto jet : allSelectedJets){
+      if(jet.pt() >= 10)
+	selectedJets.push_back(jet);
+    }
   }
   catch(...){
-    cerr << "Error caught here" << endl;
+    cerr << "Fastjet error caught in selectJets" << endl;
     exit(20);
   }
 }
