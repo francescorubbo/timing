@@ -67,7 +67,7 @@ void TrackerPixel::getParticles(JetVector &detParticles){
 }
 
 pixelCoordinate TimingTracker::getPixel(double eta, double phi){
-  coordinate xy = EtaPhi_to_xy(eta,phi,_zbase);
+  coordinate xy = EtaPhi_to_xy(abs(eta),phi,_zbase); //pretend all on forward tracker to save memory
   return make_pair(static_cast<int>(floor((xy.first)/_pixelSize)),static_cast<int>(floor((xy.second)/_pixelSize)));
 }
 
