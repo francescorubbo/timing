@@ -348,9 +348,9 @@ void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSeq
     
     //select jets with pt > 10
     selectedJets.clear();
-    for(auto jet : allSelectedJets){
-      if(jet.pt() >= 10)
-	selectedJets.push_back(jet);
+    for( auto ijet = allSelectedJets.begin(); ijet != allSelectedJets.end(); ++ijet){
+      if(ijet->pt() >= 10)
+	selectedJets.push_back(*ijet);
     }
   }
   catch(...){

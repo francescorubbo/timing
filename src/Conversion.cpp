@@ -14,10 +14,11 @@ int main(int argc, char* argv[]){
   double z=7.26;
 
   cout << eta << "\t" << phi << "\t-\t";
-  auto converted=EtaPhi_to_xy(eta,phi,z);
+  double etaSign = (eta < 0) ? -1 : 1;
+  auto converted=EtaPhi_to_xy(etaSign*eta,phi,z);
   cout << converted.first << "\t" << converted.second << "\t-\t";
   auto back=xy_to_EtaPhi(converted.first,converted.second,z);
-  cout << back.first << "\t" << back.second << endl;
+  cout << etaSign*back.first << "\t" << back.second << endl;
 
   return 0;
 }
