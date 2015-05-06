@@ -1,8 +1,8 @@
 #!/bin/bash
 
-psis="0"
+psis="0 5"
 mus="80"
-pixelSizes="0 50"
+pixelSizes="50"
 profiles="0 1"
 timeModes="0 1"
 

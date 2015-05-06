@@ -39,11 +39,11 @@ void TrackerPixel::getParticles(JetVector &detParticles){
   unsigned long bnum=0;
   unsigned long snum=0;
 
-  for(auto particle : particles){
+  for(auto particle = particles.begin(); particle != particles.end(); ++particle){
     fastjet::PseudoJet p;
     double newEta=_eta;
     double pixelID=pixelID_forward;
-    if(particle.eta() < 0){
+    if(particle->eta() < 0){
       newEta*=-1;
       pixelID=pixelID_backward;
       snum=bnum;
@@ -54,12 +54,12 @@ void TrackerPixel::getParticles(JetVector &detParticles){
       fnum++;
     }
     p.reset_PtYPhiM(pt, newEta, _phi);
-    p.set_user_info(new TimingInfo(particle.user_info<TimingInfo>().pdg_id(),
-				   particle.user_info<TimingInfo>().pythia_id(),
-				   particle.user_info<TimingInfo>().pv(),
-				   particle.user_info<TimingInfo>().pileup(),
-				   particle.user_info<TimingInfo>().time(),
-				   particle.user_info<TimingInfo>().abstime(),
+    p.set_user_info(new TimingInfo(particle->user_info<TimingInfo>().pdg_id(),
+				   particle->user_info<TimingInfo>().pythia_id(),
+				   particle->user_info<TimingInfo>().pv(),
+				   particle->user_info<TimingInfo>().pileup(),
+				   particle->user_info<TimingInfo>().time(),
+				   particle->user_info<TimingInfo>().abstime(),
 				   pixelID,
 				   snum));
     detParticles.push_back(p);    
@@ -87,18 +87,18 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
 
   //fill tracker
   pixelCoordinate pi;
-  for(auto particle : truthParticles){
-    pi=getPixel(particle.eta(),particle.phi());
+  for(auto particle = truthParticles.begin(); particle != truthParticles.end(); ++particle){
+    pi=getPixel(particle->eta(),particle->phi());
     if(pixels.count(pi) == 0){
       double xMin = static_cast<double>(pi.first)*_pixelSize;
       double yMin = static_cast<double>(pi.second)*_pixelSize;
       pixels[pi].reset(new TrackerPixel(xMin,yMin,_radius,_zbase,_pixelSize));
     }
-    pixels[pi]->detect(particle);
+    pixels[pi]->detect(*particle);
   }
 
-  for(auto pixel : pixels){
-    pixel.second->getParticles(detectedParticles);
+  for(auto pixel = pixels.begin(); pixel!= pixels.end(); ++pixel){
+    pixel->second->getParticles(detectedParticles);
   }
   
 }
