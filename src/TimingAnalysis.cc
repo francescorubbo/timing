@@ -406,33 +406,39 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
   double jetPhi = jet.phi();
 
   double pt,eta,phi,dist;
+  double meanR=0.1;
 
-  for (unsigned int i =0; i< jet.constituents().size(); i++){
+  for (auto p = jet.constituents().begin(); p != jet.constituents().end(); ++p){
     //if segmentation, only use timing from ghost particles    
-    if((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+    if((not segmentation) or p->user_info<TimingInfo>().isGhost()){
       switch(timeMode){
       case highestPT:
-	pt = jet.constituents()[i].pt();
+	pt = p->pt();
 	if(pt>maxpt){
 	  maxpt = pt;
-	  time = jet.constituents()[i].user_info<TimingInfo>().time();
-	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
+	  time = p->user_info<TimingInfo>().time();
+	  abstime = p->user_info<TimingInfo>().abstime();
 	}//endif
 	break;
       case centralParticle:
-	eta = jet.constituents()[i].eta();
-	phi = jet.constituents()[i].phi();
+	eta = p->eta();
+	phi = p->phi();
 	dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
 	if(dist < mindist){
 	  mindist = dist;
-	  time = jet.constituents()[i].user_info<TimingInfo>().time();
-	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
+	  time = p->user_info<TimingInfo>().time();
+	  abstime = p->user_info<TimingInfo>().abstime();
 	}
 	break;
       case mean:
-	time+=jet.constituents()[i].user_info<TimingInfo>().time();
-	abstime+=jet.constituents()[i].user_info<TimingInfo>().abstime();
-	pnum++;
+	eta = p->eta();
+        phi = p->phi();
+        dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
+        if(dist < meanR){
+          time += p->user_info<TimingInfo>().time();
+          abstime += p->user_info<TimingInfo>().abstime();
+	  pnum++
+        }
 	break;
       default:
 	cerr << "ComputeTime called with invalid Timing Mode" << endl;
