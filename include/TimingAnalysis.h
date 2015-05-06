@@ -3,31 +3,22 @@
 #ifndef  TimingAnalysis_H
 #define  TimingAnalysis_H
 
-#include <vector>
-#include <math.h>
-#include <string>
-#include <random>
-#include <iomanip>
-#include <math.h>
-#include <vector>
-#include <stdlib.h>
-#include <stdio.h>
-#include <memory>
+#include <sstream>
 
-#include "fastjet/PseudoJet.hh"  
+#include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
-#include "Pythia8/Pythia.h"
 #include "TH2F.h"
 
 #include "Configuration.h"
 #include "Definitions.h"
+#include "TimingInfo.h"
+#include "TimingTracker.h"
 
 using namespace std;
 using namespace fastjet;
 
 typedef vector<float> timingBranch;
-typedef vector<fastjet::PseudoJet> JetVector;
 
 class TimingDistribution{
  private:
@@ -42,7 +33,7 @@ class TimingDistribution{
 
   double _gauss_norm;
   double _square_norm;
-  
+
   double probability(double zpos, double time, distribution dtype);
   int randomSeed();
 
@@ -65,8 +56,20 @@ class TimingAnalysis{
   TFile *tF;
   TTree *tT;
   unique_ptr<TimingDistribution> rnd;
+
+  //these need to be ptrs because constructor must be called
+  unique_ptr<JetDefinition> jetDef;
+  unique_ptr<AreaDefinition> active_area;
+  unique_ptr<GridMedianBackgroundEstimator> bge;
+  unique_ptr<Selector> select_fwd;
+  unique_ptr<TimingTracker> tracker;
   
   float bunchsize;
+  float _minEta;
+  float _maxEta;
+  double _R;
+  double _pixelSize;
+
   distribution _dtype;
   double psi;
   double phi;
@@ -81,21 +84,29 @@ class TimingAnalysis{
   timingBranch *jphi;
   timingBranch *jeta;
   timingBranch *jtime;
+  timingBranch *jabstime;
+  timingBranch *jtruth;
   timingBranch *j0clpt;
   timingBranch *j0clphi;
   timingBranch *j0cleta;
   timingBranch *j0cltime;
+  timingBranch *j0clabstime;
   timingBranch *j0cltruth;
+  timingBranch *j0clpixelID;
+  timingBranch *j0clpixelNum;
   
   timingBranch *truejpt;
   timingBranch *truejphi;
   timingBranch *truejeta;
   timingBranch *truejtime;
-  
+  timingBranch *truejabstime;
+
   bool randomZ;
   bool randomT;
   bool smear;
   bool displace;
+  bool segmentation;
+  timingMode timeMode;
 
   Pythia8::Pythia *_pythiaHS;
   Pythia8::Pythia *_pythiaPU;
@@ -104,14 +115,19 @@ class TimingAnalysis{
   void ResetBranches();
   void FillTree(JetVector jets);
   void FillTruthTree(JetVector jets);
-  double ComputeTime(PseudoJet jet);
+  double ComputeTime(PseudoJet jet, double &abstime);
+  double TruthFrac(PseudoJet jet);
+  bool Ignore(Pythia8::Particle &p);
+
+  //Jet selection functions
+  void selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets);
   
  public:
   TimingAnalysis (Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q);
   ~TimingAnalysis ();
   
-  void AnalyzeEvent(int iEvt, int NPV, float minEta, float maxEta);
-  void Initialize(distribution dtype=gaussian,int seed=123);
+  void AnalyzeEvent(int iEvt, int NPV);
+  void Initialize(float minEta, float maxEta, distribution dtype=gaussian,int seed=123);
   
   //settings (call before initialization)
   void Debug(int debug){fDebug = debug;}

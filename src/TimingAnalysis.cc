@@ -1,29 +1,4 @@
-#include <math.h>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <random>
-#include <set>
-
-#include "TFile.h"
-#include "TTree.h"
-#include "TClonesArray.h"
-#include "TParticle.h"
-#include "TDatabasePDG.h"
-#include "TMath.h"
-#include "TF2.h"
-
 #include "TimingAnalysis.h"
-#include "TimingInfo.h"
-
-#include "fastjet/PseudoJet.hh"  
-#include "fastjet/Selector.hh"
-#include "fastjet/ClusterSequenceArea.hh"
-#include "fastjet/tools/GridMedianBackgroundEstimator.hh"
-#include "fastjet/tools/Subtractor.hh"
-
-#include "Pythia8/Pythia.h"
-#include "TROOT.h"
 
 using namespace std;
 
@@ -60,12 +35,18 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   SignalMode(q.HSmode);
   Psi(q.psi);
   Phi(q.phi);
-  
+
+  if(q.segmentation){
+    segmentation=true;
+    _pixelSize=q.pixelSize;
+  }
+  else
+    segmentation=false;
+
+  timeMode=q.timemode;
+
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
-  
-  //suppress fastjet banner
-  fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
 }
 
 void TimingAnalysis::PileupMode(smearMode PU){
@@ -84,7 +65,7 @@ void TimingAnalysis::PileupMode(smearMode PU){
     break;
   case ZT:
     randomT=true;
-    randomZ=false;
+    randomZ=true;
   }
 }
 
@@ -104,7 +85,7 @@ void TimingAnalysis::SignalMode(smearMode HS){
     break;
   case ZT:
     smear=true;
-    displace=false;
+    displace=true;
   }
 }
 
@@ -129,44 +110,80 @@ TimingAnalysis::~TimingAnalysis(){
     delete jphi;
     delete jeta;
     delete jtime;
+    delete jabstime;
+    delete jtruth;
     delete j0clpt;
     delete j0clphi;
     delete j0cleta;
     delete j0cltime;
+    delete j0clabstime;
     delete j0cltruth;
+    delete j0clpixelID;
+    delete j0clpixelNum;
     delete truejpt;
     delete truejphi;
     delete truejeta;
     delete truejtime;
+    delete truejabstime;
   }
 }
 
 // Begin method
-void TimingAnalysis::Initialize(distribution dtype, int seed){
+void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, int seed){
    // Declare TTree
    tF = new TFile(fOutName.c_str(), "RECREATE");
    tT = new TTree("tree", "Event Tree for Timing");
    rnd.reset(new TimingDistribution(bunchsize,seed,phi,psi));
    _dtype=dtype;
 
-   // for shit you want to do by hand
-   DeclareBranches();
+   _minEta= (minEta > 0) ? minEta : 0;
+   if(maxEta <= minEta){
+     cerr << "Invalid Eta Limits " << minEta << " -> " << maxEta << "Passed to TimingAnalysis::Initialize" << endl;
+     exit(20);
+   }
+   _maxEta= maxEta;
 
+   const double radius=1.2;
+   const double zbase=radius*sinh(_minEta);
+   if(segmentation){
+     tracker.reset(new TimingTracker(_pixelSize,radius,zbase));
+   }
+   
+   const double R=0.4;
+   const double grid_spacing(0.6);
+   
+   //suppress fastjet banner
+   fastjet::ClusterSequence::set_fastjet_banner_stream(NULL);
+   
+   jetDef.reset(new JetDefinition(fastjet::antikt_algorithm, R, fastjet::E_scheme, fastjet::Best));
+   active_area.reset(new AreaDefinition(fastjet::active_area));
+   bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
+   select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
+ 
+   DeclareBranches();
+   
    jpt = new timingBranch();  
    jphi = new timingBranch();  
    jeta = new timingBranch();  
    jtime = new timingBranch();
+   jabstime = new timingBranch();
+   jtruth = new timingBranch();
 
    j0clpt = new timingBranch();  
    j0clphi = new timingBranch();  
    j0cleta = new timingBranch();  
    j0cltime = new timingBranch();  
+   j0clabstime = new timingBranch();
    j0cltruth = new timingBranch();
+
+   j0clpixelID = new timingBranch();
+   j0clpixelNum = new timingBranch();
    
    truejpt = new timingBranch();  
    truejphi = new timingBranch();  
    truejeta = new timingBranch();  
    truejtime = new timingBranch();  
+   truejabstime = new timingBranch();
 
    ResetBranches();
    
@@ -174,7 +191,7 @@ void TimingAnalysis::Initialize(distribution dtype, int seed){
 }
 
 // Analyze
-void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta){
+void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
   if(fDebug) 
     cout << "TimingAnalysis::AnalyzeEvent Begin " << endl;
@@ -206,7 +223,10 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
     zhs=fzvtxspread;
   if(smear)
     ths=ftvtxspread;
-  
+
+  static const double radius = 1.2; // barrel radius=1.2 meter 
+  double z0 = radius*sinh(_minEta);
+
   //Loop over Pileup Events
   for (int iPU = 0; iPU <= NPV; ++iPU) {
     
@@ -222,15 +242,14 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
     //Loop over pileup particles
     for (int i = 0; i < _pythiaPU->event.size(); ++i) {
 
-      //skipping Leptons
-      if (!_pythiaPU->event[i].isFinal()    ) continue;
-      if (fabs(_pythiaPU->event[i].id())==12) continue;
-      if (fabs(_pythiaPU->event[i].id())==14) continue;
-      if (fabs(_pythiaPU->event[i].id())==13) continue;
-      if (fabs(_pythiaPU->event[i].id())==16) continue;
+      if(Ignore(_pythiaPU->event[i]))
+	continue;
       
       //Instantiate new pseudojet
-      PseudoJet p(_pythiaPU->event[i].px(), _pythiaPU->event[i].py(), _pythiaPU->event[i].pz(),_pythiaPU->event[i].e() ); 
+      PseudoJet p(_pythiaPU->event[i].px(), 
+		  _pythiaPU->event[i].py(), 
+		  _pythiaPU->event[i].pz(),
+		  _pythiaPU->event[i].e() ); 
       
       //extract event information
       double eta = p.rapidity();
@@ -238,23 +257,23 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
       double cosheta = cosh(eta);
       
       //calculate eta from displacement (minEta pos)
-      static const double radius = 1.2; // barrel radius=1.2 meter
-      double zbase = radius*sinh(minEta)*sgn(eta); //displace due to new location of Hard-Scatter Vertex
-      double corrEta = asinh(zbase*sinheta/(zbase-zvtx));
-      if(fabs(corrEta)>maxEta) continue;
+      double zbase = z0*sgn(eta); //displace due to new location of Hard-Scatter Vertex
+      double dz = zbase-zvtx;
+      double corrEta = asinh(zbase*sinheta/dz);
       
       //calculate time measured relative to if event was at 0
-      double dist = (zbase-zvtx)*cosheta/sinheta;
+      double dist = dz*cosheta/sinheta;
       double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
-      double refdist = (zbase-zhs)*cosh(corrEta)/sinh(corrEta);
+      
+      double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow(dz,2));
       double reftime = fabs(refdist)/LIGHTSPEED;
       double corrtime = (time-reftime)*1e9;
-      if(fabs(corrEta)<minEta) 
-	corrtime = -999.;
+      if((fabs(corrEta)< _minEta) or (fabs(corrEta)>_maxEta))
+	time = corrtime = -999.;
       
-      p.reset_PtYPhiM(p.pt(), corrEta, p.phi(), 0.);
+      p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
       
-      p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),i,iPU,true,corrtime)); 
+      p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),i,iPU,true,corrtime,time)); 
       particlesForJets.push_back(p); 
     }
     if (!_pythiaPU->next()) continue;
@@ -263,44 +282,50 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
   // Particle loop -----------------------------------------------------------
   for (int ip=0; ip<_pythiaHS->event.size(); ++ip){
     
-    if (!_pythiaHS->event[ip].isFinal() )      continue;
-    //if (fabs(_pythiaHS->event[ip].id())  ==11) continue;
-    if (fabs(_pythiaHS->event[ip].id())  ==12) continue;
-    if (fabs(_pythiaHS->event[ip].id())  ==13) continue;
-    if (fabs(_pythiaHS->event[ip].id())  ==14) continue;
-    if (fabs(_pythiaHS->event[ip].id())  ==16) continue;
+    if(Ignore(_pythiaHS->event[ip]))
+      continue;
     
-    fastjet::PseudoJet p(_pythiaHS->event[ip].px(), _pythiaHS->event[ip].py(), _pythiaHS->event[ip].pz(),_pythiaHS->event[ip].e() ); 
+    fastjet::PseudoJet p(_pythiaHS->event[ip].px(), 
+			 _pythiaHS->event[ip].py(), 
+			 _pythiaHS->event[ip].pz(),
+			 _pythiaHS->event[ip].e() ); 
+    
     double eta = p.rapidity();
-    if (fabs(eta)>maxEta) continue;
+    double sinheta = sinh(eta);
+
+    //calculate eta from displacement (minEta pos)
+    double zbase = z0*sgn(eta); //displace due to new location of Hard-Scatter Vertex    
+    double dz = zbase-zhs;
+    double dist = dz*cosh(eta)/sinheta;
+    double time = fabs(dist)/LIGHTSPEED + ths; //plus random time  
+    time *= 1e9;
+
+    double corrEta = asinh(zbase*sinheta/dz);
     double corrtime = ths*1e9;
-    if (fabs(eta)<minEta) corrtime = -999.;
-    p.reset_PtYPhiM(p.pt(), eta, p.phi(), 0.);
-    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime)); //0 for the primary vertex. 
+    if ((fabs(corrEta)<_minEta) or (fabs(corrEta)>_maxEta))
+      time = corrtime = -999.;
+    
+    p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
+    //0 for the primary vertex.
+    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime,time));  
     
     particlesForJets.push_back(p);
     particlesForJets_np.push_back(p);
     
   } // end particle loop -----------------------------------------------
-  
-  fastjet::JetDefinition jetDef(fastjet::antikt_algorithm, 0.4, fastjet::E_scheme, fastjet::Best);
-  fastjet::AreaDefinition active_area(fastjet::active_area);
-  fastjet::ClusterSequenceArea clustSeq(particlesForJets, jetDef, active_area);
-  
-  fastjet::GridMedianBackgroundEstimator bge(4.5,0.6);
-  bge.set_particles(particlesForJets);
-  fastjet::Subtractor subtractor(&bge);
-  
-  JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
-  JetVector subtractedJets = subtractor(inclusiveJets);
-  Selector select_fwd = SelectorAbsRapRange(minEta,4.5);
-  JetVector selectedJets = select_fwd(subtractedJets);
-  
+
+  if(segmentation){
+    tracker->AddDetectedParticles(particlesForJets);
+    tracker->AddDetectedParticles(particlesForJets_np);
+  }
+
+  JetVector selectedJets,selectedTruthJets;
+  fastjet::ClusterSequenceArea clustSeq(particlesForJets, *jetDef, *active_area);
+  selectJets(particlesForJets,clustSeq,selectedJets);
   FillTree(selectedJets);
-  
-  fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, jetDef, active_area);
-  JetVector truthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
-  JetVector selectedTruthJets = select_fwd(truthJets);
+
+  fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
+  selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
@@ -311,47 +336,156 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV, float minEta, float maxEta)
   return;
 }
 
+void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
+  try{
+    bge->set_particles(particlesForJets);
+
+    fastjet::Subtractor subtractor(bge.get());    
+    JetVector inclusiveJets = sorted_by_pt(clustSeq.inclusive_jets(10.));
+    JetVector subtractedJets = subtractor(inclusiveJets);
+
+    JetVector allSelectedJets;
+    allSelectedJets.clear();
+    allSelectedJets = (*select_fwd)(subtractedJets);
+    
+    //select jets with pt > 10
+    selectedJets.clear();
+    for( auto ijet = allSelectedJets.begin(); ijet != allSelectedJets.end(); ++ijet){
+      if(ijet->pt() >= 10)
+	selectedJets.push_back(*ijet);
+    }
+  }
+  catch(...){
+    cerr << "Fastjet error caught in selectJets" << endl;
+    exit(20);
+  }
+}
+
 // worker function to actually perform an analysis
 void TimingAnalysis::FillTree(JetVector jets){  
 
+  double abstime;
   for (unsigned int ijet=0; ijet<jets.size(); ijet++){
     jpt->push_back(jets[ijet].pt());
     jeta->push_back(jets[ijet].eta());
     jphi->push_back(jets[ijet].phi());
-    jtime->push_back(ComputeTime(jets[ijet]));
+    jtime->push_back(ComputeTime(jets[ijet],abstime));
+    jabstime->push_back(abstime);
+    jtruth->push_back(TruthFrac(jets[ijet]));
   }
-
+  
   if(jets.size()>0)
     for (unsigned int icl=0; icl<jets[0].constituents().size(); icl++){    
       j0clpt->push_back(jets[0].constituents()[icl].pt());
       j0clphi->push_back(jets[0].constituents()[icl].phi());
       j0cleta->push_back(jets[0].constituents()[icl].eta());
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
+      j0clabstime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().abstime());
       j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 1.0 : 0.0);
+      j0clpixelID->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_id());
+      j0clpixelNum->push_back(static_cast<double>(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_num()));
     }  
 }
 
 void TimingAnalysis::FillTruthTree(JetVector jets){  
+  double abstime;
   for (unsigned int ijet=0; ijet<jets.size(); ijet++){
     truejpt->push_back(jets[ijet].pt());
     truejeta->push_back(jets[ijet].eta());
     truejphi->push_back(jets[ijet].phi());
-    truejtime->push_back(ComputeTime(jets[ijet]));
+    truejtime->push_back(ComputeTime(jets[ijet],abstime));
+    truejabstime->push_back(abstime);
   }
 }
 
-double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet){
-  double time = 0.;
-  float maxpt = 0.;
-  for (unsigned int i=0; i<jet.constituents().size(); i++){
-    // time+=jet.constituents()[i].user_info<TimingInfo>().time();
-    float pt = jet.constituents()[i].pt();
-    if(pt>maxpt){
-      maxpt = pt;
-      time = jet.constituents()[i].user_info<TimingInfo>().time();
-    }//endif
-  }//endloop
+double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
+  double time=0;
+  float mindist = 1;
+  float maxpt = 0;
+  double pnum=0;
+
+  abstime=0;
+  double jetEta = jet.eta();
+  double jetPhi = jet.phi();
+
+  double pt,eta,phi,dist;
+  double meanR=0.1;
+
+  for (unsigned int i=0; i < jet.constituents().size(); i++){
+    //if segmentation, only use timing from ghost particles    
+    if(((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()) 
+       and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
+      switch(timeMode){
+      case highestPT:
+	pt = jet.constituents()[i].pt();
+	if(pt>maxpt){
+	  maxpt = pt;
+	  time = jet.constituents()[i].user_info<TimingInfo>().time();
+	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
+	}//endif
+	break;
+      case centralParticle:
+	eta = jet.constituents()[i].eta();
+	phi = jet.constituents()[i].phi();
+	dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
+	if(dist < mindist){
+	  mindist = dist;
+	  time = jet.constituents()[i].user_info<TimingInfo>().time();
+	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
+	}
+	break;
+      case mean:
+	eta = jet.constituents()[i].eta();
+        phi = jet.constituents()[i].phi();
+        dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
+        if(dist < meanR){
+          time += jet.constituents()[i].user_info<TimingInfo>().time();
+          abstime += jet.constituents()[i].user_info<TimingInfo>().abstime();
+	  pnum++;
+        }
+	break;
+      default:
+	cerr << "ComputeTime called with invalid Timing Mode" << endl;
+	return -999;
+      }
+    }
+  }
+
+  if(timeMode == mean){
+    time/=pnum;
+    abstime/=pnum;
+  }
+
   return time;
+}
+
+double TimingAnalysis::TruthFrac(PseudoJet jet){
+
+  double ptTot=0;
+  double ptTruthTot=0;
+  for (unsigned int i=0; i < jet.constituents().size(); i++){
+    if(((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()) and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
+      ptTot += jet.constituents()[i].pt();
+      if(not jet.constituents()[i].user_info<TimingInfo>().pileup())
+	ptTruthTot += jet.constituents()[i].pt();
+    }
+  }
+
+  return ptTruthTot/ptTot;
+}
+
+bool TimingAnalysis::Ignore(Pythia8::Particle &p){
+  if (!p.isFinal() )      
+    return true;
+  switch(abs(p.id())){
+  case 12:
+  case 13:
+  case 14:
+  case 16:
+    return true;
+  default:
+    return false;
+  }
 }
 
 // declare branches
@@ -367,16 +501,23 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("jphi","std::vector<float>",&jphi);
   tT->Branch("jeta","std::vector<float>",&jeta);
   tT->Branch("jtime","std::vector<float>",&jtime);
+  tT->Branch("jabstime","std::vector<float>",&jabstime);
+  tT->Branch("jtruth","std::vector<float>",&jtruth);
+
   tT->Branch("j0clpt","std::vector<float>",&j0clpt);
   tT->Branch("j0clphi","std::vector<float>",&j0clphi);
   tT->Branch("j0cleta","std::vector<float>",&j0cleta);
   tT->Branch("j0cltime","std::vector<float>",&j0cltime);
+  tT->Branch("j0clabstime","std::vector<float>",&j0clabstime);
   tT->Branch("j0cltruth","std::vector<float>",&j0cltruth);
+  tT->Branch("j0clpixelID","std::vector<float>",&j0clpixelID);
+  tT->Branch("j0clpixelNum","std::vector<float>",&j0clpixelNum);
 
   tT->Branch("truejpt", "std::vector<float>",&truejpt);
   tT->Branch("truejphi","std::vector<float>",&truejphi);
   tT->Branch("truejeta","std::vector<float>",&truejeta);
   tT->Branch("truejtime","std::vector<float>",&truejtime);
+  tT->Branch("truejabstime","std::vector<float>",&truejabstime);
   
   return;
 }
@@ -393,16 +534,21 @@ void TimingAnalysis::ResetBranches(){
       jphi->clear();
       jeta->clear();
       jtime->clear();
+      jabstime->clear();
+      jtruth->clear();
       j0clpt->clear();
       j0clphi->clear();
       j0cleta->clear();
       j0cltime->clear();
+      j0clabstime->clear();
       j0cltruth->clear();
+      j0clpixelID->clear();
+      j0clpixelNum->clear();
       truejpt->clear();
       truejphi->clear();
       truejeta->clear();
       truejtime->clear();
-
+      truejabstime->clear();
 }
 
 double TimingDistribution::probability(double zpos, double time, distribution dtype){

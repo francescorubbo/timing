@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <memory>
 
-#include "Pythia8/Pythia.h"
+#include "Definitions.h"
 #include "TimingAnalysis.h"
 #include "Configuration.h"
 
@@ -21,14 +21,14 @@ int main(int argc, char* argv[]){
     
   // TimingAnalysis
   TimingAnalysis analysis(pythiaHS.get(),pythiaPU.get(), settings);
-  analysis.Initialize(settings.dtype,2*settings.seed);
+  analysis.Initialize(settings.minEta,settings.maxEta,settings.dtype,2*settings.seed);
   
   // Event loop
   cout << "Progress:" << endl;
   for (Int_t iev = 0; iev < settings.nEvents; iev++) {
     if (iev%20==0)
       cout << "\tCurrent: " << iev << endl;
-    analysis.AnalyzeEvent(iev, settings.pileup, settings.minEta, settings.maxEta);
+    analysis.AnalyzeEvent(iev, settings.pileup);
   }  
   cout << "Timing Analysis Complete!" << endl;
   

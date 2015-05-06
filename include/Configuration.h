@@ -6,8 +6,6 @@
 #include <iostream>
 #include <sstream>
 #include "boost/program_options.hpp"
-#include "Pythia8/Pythia.h"
-
 #include "Definitions.h"
 
 using namespace std;
@@ -41,9 +39,13 @@ public:
   float  phi;
   float  psi;
 
+  float pixelSize;
+
   bool   useCK;
+  bool   segmentation;
   smearMode HSmode;
   smearMode PUmode;
+  timingMode timemode;
   distribution dtype;  
 };
 
