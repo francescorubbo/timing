@@ -85,6 +85,7 @@ class TimingAnalysis{
   timingBranch *jeta;
   timingBranch *jtime;
   timingBranch *jabstime;
+  timingBranch *jtruth;
   timingBranch *j0clpt;
   timingBranch *j0clphi;
   timingBranch *j0cleta;
@@ -115,6 +116,7 @@ class TimingAnalysis{
   void FillTree(JetVector jets);
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet, double &abstime);
+  double TruthFrac(PseudoJet jet);
   bool Ignore(Pythia8::Particle &p);
 
   //Jet selection functions

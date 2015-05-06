@@ -111,6 +111,7 @@ TimingAnalysis::~TimingAnalysis(){
     delete jeta;
     delete jtime;
     delete jabstime;
+    delete jtruth;
     delete j0clpt;
     delete j0clphi;
     delete j0cleta;
@@ -166,7 +167,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    jeta = new timingBranch();  
    jtime = new timingBranch();
    jabstime = new timingBranch();
-   
+   jtruth = new timingBranch();
+
    j0clpt = new timingBranch();  
    j0clphi = new timingBranch();  
    j0cleta = new timingBranch();  
@@ -369,8 +371,9 @@ void TimingAnalysis::FillTree(JetVector jets){
     jphi->push_back(jets[ijet].phi());
     jtime->push_back(ComputeTime(jets[ijet],abstime));
     jabstime->push_back(abstime);
+    jtruth->push_back(TruthFrac(jets[ijet]));
   }
-
+  
   if(jets.size()>0)
     for (unsigned int icl=0; icl<jets[0].constituents().size(); icl++){    
       j0clpt->push_back(jets[0].constituents()[icl].pt());
@@ -408,36 +411,37 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
   double pt,eta,phi,dist;
   double meanR=0.1;
 
-  for (auto p = jet.constituents().begin(); p != jet.constituents().end(); ++p){
+  for (unsigned int i=0; i < jet.constituents().size(); i++){
     //if segmentation, only use timing from ghost particles    
-    if((not segmentation) or p->user_info<TimingInfo>().isGhost()){
+    if(((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()) 
+       and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
       switch(timeMode){
       case highestPT:
-	pt = p->pt();
+	pt = jet.constituents()[i].pt();
 	if(pt>maxpt){
 	  maxpt = pt;
-	  time = p->user_info<TimingInfo>().time();
-	  abstime = p->user_info<TimingInfo>().abstime();
+	  time = jet.constituents()[i].user_info<TimingInfo>().time();
+	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
 	}//endif
 	break;
       case centralParticle:
-	eta = p->eta();
-	phi = p->phi();
+	eta = jet.constituents()[i].eta();
+	phi = jet.constituents()[i].phi();
 	dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
 	if(dist < mindist){
 	  mindist = dist;
-	  time = p->user_info<TimingInfo>().time();
-	  abstime = p->user_info<TimingInfo>().abstime();
+	  time = jet.constituents()[i].user_info<TimingInfo>().time();
+	  abstime = jet.constituents()[i].user_info<TimingInfo>().abstime();
 	}
 	break;
       case mean:
-	eta = p->eta();
-        phi = p->phi();
+	eta = jet.constituents()[i].eta();
+        phi = jet.constituents()[i].phi();
         dist = sqrt(pow(eta-jetEta,2)+pow(phi-jetPhi,2));
         if(dist < meanR){
-          time += p->user_info<TimingInfo>().time();
-          abstime += p->user_info<TimingInfo>().abstime();
-	  pnum++
+          time += jet.constituents()[i].user_info<TimingInfo>().time();
+          abstime += jet.constituents()[i].user_info<TimingInfo>().abstime();
+	  pnum++;
         }
 	break;
       default:
@@ -453,6 +457,21 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
   }
 
   return time;
+}
+
+double TimingAnalysis::TruthFrac(PseudoJet jet){
+
+  double ptTot=0;
+  double ptTruthTot=0;
+  for (unsigned int i=0; i < jet.constituents().size(); i++){
+    if(((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()) and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
+      ptTot += jet.constituents()[i].pt();
+      if(not jet.constituents()[i].user_info<TimingInfo>().pileup())
+	ptTruthTot += jet.constituents()[i].pt();
+    }
+  }
+
+  return ptTruthTot/ptTot;
 }
 
 bool TimingAnalysis::Ignore(Pythia8::Particle &p){
@@ -483,6 +502,7 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("jeta","std::vector<float>",&jeta);
   tT->Branch("jtime","std::vector<float>",&jtime);
   tT->Branch("jabstime","std::vector<float>",&jabstime);
+  tT->Branch("jtruth","std::vector<float>",&jtruth);
 
   tT->Branch("j0clpt","std::vector<float>",&j0clpt);
   tT->Branch("j0clphi","std::vector<float>",&j0clphi);
@@ -515,6 +535,7 @@ void TimingAnalysis::ResetBranches(){
       jeta->clear();
       jtime->clear();
       jabstime->clear();
+      jtruth->clear();
       j0clpt->clear();
       j0clphi->clear();
       j0cleta->clear();

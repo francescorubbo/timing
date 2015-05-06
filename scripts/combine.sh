@@ -1,8 +1,8 @@
 #!/bin/bash
 
-psis="0 5"
-mus="80"
-pixelSizes="50"
+psis="5"
+mus="140 200"
+pixelSizes="0 200"
 profiles="0 1"
 timeModes="0 1"
 
@@ -12,12 +12,12 @@ for mu in $mus ; do
     for psi in $psis ; do
 	for px in $pixelSizes ; do
 	    for tm in $timeModes ; do
-		hadd -f ./Gauss_mu-${mu}_psi-${psi}_px-${px}_time-${tm}.root ${path}Sample_mu-${mu}_psi-${psi}_nevents-200_prof-0_px-${px}_time-${tm}_job-*
+		hadd -f -k ./Gauss_mu-${mu}_psi-${psi}_px-${px}_time-${tm}.root ${path}Sample_mu-${mu}_psi-${psi}_nevents-200_prof-0_px-${px}_time-${tm}_job-*
 		if [ $? -gt 0 ]
 		then
 		    exit
 		fi
-		hadd -f ./Square_mu-${mu}_psi-${psi}_px-${px}_time-${tm}.root ${path}Sample_mu-${mu}_psi-${psi}_nevents-200_prof-1_px-${px}_time-${tm}_job-*
+		hadd -f -k ./Square_mu-${mu}_psi-${psi}_px-${px}_time-${tm}.root ${path}Sample_mu-${mu}_psi-${psi}_nevents-200_prof-1_px-${px}_time-${tm}_job-*
 		if [ $? -gt 0 ]
 		then
                     exit
