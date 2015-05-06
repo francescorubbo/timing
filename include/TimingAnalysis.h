@@ -73,6 +73,7 @@ class TimingAnalysis{
   distribution _dtype;
   double psi;
   double phi;
+  double timefractioncut;
   
   // Tree Vars ---------------------------------------
   int fTEventNumber;
@@ -117,6 +118,7 @@ class TimingAnalysis{
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet, double &abstime);
   double TruthFrac(PseudoJet jet);
+  double TimeFrac(PseudoJet jet);
   bool Ignore(Pythia8::Particle &p);
 
   //Jet selection functions
