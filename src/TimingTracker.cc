@@ -59,6 +59,7 @@ void TrackerPixel::getParticles(JetVector &detParticles){
 				   particle->user_info<TimingInfo>().pythia_id(),
 				   particle->user_info<TimingInfo>().pv(),
 				   particle->user_info<TimingInfo>().pileup(),
+				   particle->user_info<TimingInfo>().pt(),
 				   particle->user_info<TimingInfo>().time(),
 				   particle->user_info<TimingInfo>().abstime(),
 				   pixelID,

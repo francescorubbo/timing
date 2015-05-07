@@ -274,7 +274,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
-				     i,iPU,true,corrtime,time)); 
+				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time)); 
       particlesForJets.push_back(p); 
     }
     if (!_pythiaPU->next()) continue;
@@ -309,7 +309,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
     //0 for the primary vertex.
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
-				   ip,0, false,corrtime,time));  
+				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time));  
     
     particlesForJets.push_back(p);
     particlesForJets_np.push_back(p);
@@ -419,7 +419,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
        and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
       switch(timeMode){
       case highestPT:
-	pt = jet.constituents()[i].pt();
+	pt = jet.constituents()[i].user_info<TimingInfo>().pt();
 	if(pt>maxpt){
 	  maxpt = pt;
 	  time = jet.constituents()[i].user_info<TimingInfo>().time();

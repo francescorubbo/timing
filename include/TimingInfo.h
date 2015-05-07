@@ -13,6 +13,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
 	    const int & pythia_id_in,  
 	    const double & pv_in, 
 	    const bool & pileup_in,
+	    const double & pt_in,
 	    const double & time_in,
 	    const double & abstime_in,
 	    const double & pixel_id_in=0,
@@ -22,6 +23,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
     _pythia_id(pythia_id_in), 
     _pv(pv_in),
     _pileup(pileup_in),
+    _pt(pt_in),
     _time(time_in),
     _abstime(abstime_in),
     _pixel_id(pixel_id_in),
@@ -34,6 +36,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
   int pixel_num() const {return _pixel_num;}
   bool pileup() const { return _pileup;}
   double pv() const { return _pv;}  
+  double pt() const { return _pt;}
   double time() const { return _time;}
   double abstime() const { return _abstime;}
   bool isGhost() const { return (_pixel_id != 0); }
@@ -43,6 +46,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
   int _pythia_id;  // index in pythia.event
   double _pv;  // the particle pv
   bool _pileup; //true if pileup, false if truth
+  double _pt;  //pt
   double _time;  //corrected time
   double _abstime; //time from vertex
   double _pixel_id; //Pixel particle found in
