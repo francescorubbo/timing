@@ -273,7 +273,8 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
       
-      p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),i,iPU,true,corrtime,time)); 
+      p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
+				     i,iPU,true,corrtime,time)); 
       particlesForJets.push_back(p); 
     }
     if (!_pythiaPU->next()) continue;
@@ -307,7 +308,8 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     
     p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
     //0 for the primary vertex.
-    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),ip,0, false,corrtime,time));  
+    p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
+				   ip,0, false,corrtime,time));  
     
     particlesForJets.push_back(p);
     particlesForJets_np.push_back(p);

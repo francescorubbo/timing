@@ -9,6 +9,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
  public:
  
  TimingInfo(const int & pdg_id_in,
+	    const int & charge_in,
 	    const int & pythia_id_in,  
 	    const double & pv_in, 
 	    const bool & pileup_in,
@@ -17,6 +18,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
 	    const double & pixel_id_in=0,
 	    const int & pixel_num_in=-1) 
    :_pdg_id(pdg_id_in),
+    _charge(charge_in),
     _pythia_id(pythia_id_in), 
     _pv(pv_in),
     _pileup(pileup_in),
@@ -26,6 +28,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
     _pixel_num(pixel_num_in){}
   
   int pdg_id() const { return _pdg_id;}
+  int charge() const { return _charge;}
   int pythia_id() const {return _pythia_id;}
   double pixel_id() const { return _pixel_id;}
   int pixel_num() const {return _pixel_num;}
@@ -36,6 +39,7 @@ class TimingInfo : public PseudoJet::UserInfoBase{
   bool isGhost() const { return (_pixel_id != 0); }
  protected:
   int _pdg_id;         // the associated pdg id
+  int _charge;         // the particle charge
   int _pythia_id;  // index in pythia.event
   double _pv;  // the particle pv
   bool _pileup; //true if pileup, false if truth

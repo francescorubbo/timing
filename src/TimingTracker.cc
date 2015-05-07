@@ -55,6 +55,7 @@ void TrackerPixel::getParticles(JetVector &detParticles){
     }
     p.reset_PtYPhiM(pt, newEta, _phi);
     p.set_user_info(new TimingInfo(particle->user_info<TimingInfo>().pdg_id(),
+				   particle->user_info<TimingInfo>().charge(),
 				   particle->user_info<TimingInfo>().pythia_id(),
 				   particle->user_info<TimingInfo>().pv(),
 				   particle->user_info<TimingInfo>().pileup(),
@@ -88,6 +89,7 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
   //fill tracker
   pixelCoordinate pi;
   for(auto particle = truthParticles.begin(); particle != truthParticles.end(); ++particle){
+    if(particle->user_info<TimingInfo>().charge()==0) continue; //use only charged particles
     pi=getPixel(particle->eta(),particle->phi());
     if(pixels.count(pi) == 0){
       double xMin = static_cast<double>(pi.first)*_pixelSize;
