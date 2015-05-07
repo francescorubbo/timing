@@ -143,8 +143,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    }
    _maxEta= maxEta;
 
-   const double radius=1.2;
-   const double zbase=radius*sinh(_minEta);
+   const double zbase=3.5;
+   const double radius=zbase/sinh(_minEta);
    if(segmentation){
      tracker.reset(new TimingTracker(_pixelSize,radius,zbase));
    }
@@ -224,8 +224,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   if(smear)
     ths=ftvtxspread;
 
-  static const double radius = 1.2; // barrel radius=1.2 meter 
-  double z0 = radius*sinh(_minEta);
+  static const double z0 = 3.5; // FIX THIS! DEFINE Z0 ONLY IN ONE PLACE! 
 
   //Loop over Pileup Events
   for (int iPU = 0; iPU <= NPV; ++iPU) {
