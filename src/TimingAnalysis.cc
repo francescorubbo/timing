@@ -35,6 +35,7 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   SignalMode(q.HSmode);
   Psi(q.psi);
   Phi(q.phi);
+  timefractioncut = 0.2;
 
   if(q.segmentation){
     segmentation=true;
@@ -474,6 +475,21 @@ double TimingAnalysis::TruthFrac(PseudoJet jet){
   }
 
   return ptTruthTot/ptTot;
+}
+
+double TimingAnalysis::TimeFrac(PseudoJet jet){
+  
+  double totTimes=0;
+  double totHSTimes=0;
+  for (unsigned int i=0; i < jet.constituents().size(); i++){
+    PseudoJet pixel = jet.constituents()[i];
+    if(not pixel.user_info<TimingInfo>().isGhost()) continue;
+    totTimes++;
+    if(abs(pixel.user_info<TimingInfo>().time())<timefractioncut)
+      totHSTimes++;
+  }
+  
+  return totHSTimes/totTimes;
 }
 
 bool TimingAnalysis::Ignore(Pythia8::Particle &p){
