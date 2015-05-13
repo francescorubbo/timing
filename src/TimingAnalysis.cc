@@ -462,13 +462,20 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
 
 double TimingAnalysis::TruthFrac(PseudoJet jet){
 
-  double ptTot=0;
+  double ptTot=jet.pt();
   double ptTruthTot=0;
   for (unsigned int i=0; i < jet.constituents().size(); i++){
-    if(((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()) and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
-      ptTot += jet.constituents()[i].pt();
-      if(not jet.constituents()[i].user_info<TimingInfo>().pileup())
-	ptTruthTot += jet.constituents()[i].pt();
+    if (not jet.constituents()[i].user_info<TimingInfo>().pileup()){
+      if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
+	if(segmentation){
+	  if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+	    ptTruthTot += jet.constituents()[i].pt();
+	  }
+	}
+	else{
+	  ptTruthTot += jet.constituents()[i].pt();
+	}
+      }
     }
   }
 
