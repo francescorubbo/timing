@@ -159,6 +159,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    jetDef.reset(new JetDefinition(fastjet::antikt_algorithm, R, fastjet::E_scheme, fastjet::Best));
    active_area.reset(new AreaDefinition(fastjet::active_area));
    bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
+   rescaling.reset(new BackgroundRescalingYPolynomial(1.1685397, 0, -0.0246807, 0, 5.94119e-05)); //function for rapidity rescaling of rho
    select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
  
    DeclareBranches();
@@ -327,7 +328,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   FillTree(selectedJets);
 
   fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
-  selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
+  selectedTruthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
@@ -340,6 +341,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
 void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
   try{
+    bge->set_rescaling_class(rescaling.get());
     bge->set_particles(particlesForJets);
 
     fastjet::Subtractor subtractor(bge.get());    
@@ -350,10 +352,10 @@ void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSeq
     allSelectedJets.clear();
     allSelectedJets = (*select_fwd)(subtractedJets);
     
-    //select jets with pt > 10
+    //select jets with pt > 20
     selectedJets.clear();
     for( auto ijet = allSelectedJets.begin(); ijet != allSelectedJets.end(); ++ijet){
-      if(ijet->pt() >= 10)
+      if(ijet->pt() >= 20)
 	selectedJets.push_back(*ijet);
     }
   }
