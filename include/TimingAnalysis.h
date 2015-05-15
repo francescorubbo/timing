@@ -118,7 +118,7 @@ class TimingAnalysis{
   void FillTree(JetVector jets, JetVector truthJets);
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet, double &abstime);
-  double TruthFrac(PseudoJet jet, PseudoJet truthJet);
+  double TruthFrac(PseudoJet jet, JetVector truthJets);
   bool Ignore(Pythia8::Particle &p);
 
   //Jet selection functions

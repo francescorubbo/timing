@@ -379,10 +379,7 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
     jphi->push_back(jets[ijet].phi());
     jtime->push_back(ComputeTime(jets[ijet],abstime));
     jabstime->push_back(abstime);
-    if(TruthJets.size() > 0)
-      jtruth->push_back(TruthFrac(jets[ijet],TruthJets[0]));
-    else
-      jtruth->push_back(0.0);
+    jtruth->push_back(TruthFrac(jets[ijet],TruthJets));
   }
   
   if(jets.size()>0)
@@ -470,30 +467,38 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
   return time;
 }
 
-double TimingAnalysis::TruthFrac(PseudoJet jet, PseudoJet truthJet){
+double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
 
   double ptTot=jet.pt();
-  double eta=truthJet.eta();
-  double phi=truthJet.phi();
+  double maxFrac=0;
 
-  double ptTruthTot=0;
-  for (unsigned int i=0; i < jet.constituents().size(); i++){
-    double dist=distance(jet.constituents()[i].eta(),jet.constituents()[i].phi(),eta,phi);
-    if ((not jet.constituents()[i].user_info<TimingInfo>().pileup()) and (dist <= 0.4)){
-      if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
-	if(segmentation){
-	  if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+  for (auto ijet = truthJets.begin(); ijet != truthJets.end(); ijet++){
+    double eta=ijet->eta();
+    double phi=ijet->phi();
+
+    double ptTruthTot=0;
+    for (unsigned int i=0; i < jet.constituents().size(); i++){
+      double dist=distance(jet.constituents()[i].eta(),jet.constituents()[i].phi(),eta,phi);
+      if ((not jet.constituents()[i].user_info<TimingInfo>().pileup()) and (dist <= 0.4)){
+	if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
+	  if(segmentation){
+	    if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+	      ptTruthTot += jet.constituents()[i].pt();
+	    }
+	  }
+	  else{
 	    ptTruthTot += jet.constituents()[i].pt();
 	  }
 	}
-	else{
-	  ptTruthTot += jet.constituents()[i].pt();
-	}
       }
     }
+    
+    double frac=ptTruthTot/ptTot;
+    if(frac > maxFrac)
+      maxFrac=frac;
   }
-
-  return ptTruthTot/ptTot;
+  
+  return maxFrac;
 }
 
 bool TimingAnalysis::Ignore(Pythia8::Particle &p){
