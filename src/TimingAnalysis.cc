@@ -11,6 +11,12 @@ double sgn(double val){
     return 0;
 }
 
+double distance(double eta, double phi,double truthEta, double truthPhi){
+  double de=eta-truthEta;
+  double dp=phi-truthPhi;
+  return sqrt(pow(de,2)+pow(dp,2));
+}
+
 // Constructor 
 TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythiaPU, Configuration q){
 
@@ -35,7 +41,6 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   SignalMode(q.HSmode);
   Psi(q.psi);
   Phi(q.phi);
-  timefractioncut = 0.2;
 
   if(q.segmentation){
     segmentation=true;
@@ -324,10 +329,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   JetVector selectedJets,selectedTruthJets;
   fastjet::ClusterSequenceArea clustSeq(particlesForJets, *jetDef, *active_area);
   selectJets(particlesForJets,clustSeq,selectedJets);
-  FillTree(selectedJets);
 
   fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
   selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
+  
+  FillTree(selectedJets,selectedTruthJets);
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
@@ -364,7 +370,7 @@ void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSeq
 }
 
 // worker function to actually perform an analysis
-void TimingAnalysis::FillTree(JetVector jets){  
+void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
 
   double abstime;
   for (unsigned int ijet=0; ijet<jets.size(); ijet++){
@@ -373,7 +379,7 @@ void TimingAnalysis::FillTree(JetVector jets){
     jphi->push_back(jets[ijet].phi());
     jtime->push_back(ComputeTime(jets[ijet],abstime));
     jabstime->push_back(abstime);
-    jtruth->push_back(TruthFrac(jets[ijet]));
+    jtruth->push_back(TruthFrac(jets[ijet],TruthJets));
   }
   
   if(jets.size()>0)
@@ -461,41 +467,38 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
   return time;
 }
 
-double TimingAnalysis::TruthFrac(PseudoJet jet){
+double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
 
   double ptTot=jet.pt();
-  double ptTruthTot=0;
-  for (unsigned int i=0; i < jet.constituents().size(); i++){
-    if (not jet.constituents()[i].user_info<TimingInfo>().pileup()){
-      if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
-	if(segmentation){
-	  if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+  double maxFrac=0;
+
+  for (auto ijet = truthJets.begin(); ijet != truthJets.end(); ijet++){
+    double eta=ijet->eta();
+    double phi=ijet->phi();
+
+    double ptTruthTot=0;
+    for (unsigned int i=0; i < jet.constituents().size(); i++){
+      double dist=distance(jet.constituents()[i].eta(),jet.constituents()[i].phi(),eta,phi);
+      if ((not jet.constituents()[i].user_info<TimingInfo>().pileup()) and (dist <= 0.4)){
+	if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
+	  if(segmentation){
+	    if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+	      ptTruthTot += jet.constituents()[i].pt();
+	    }
+	  }
+	  else{
 	    ptTruthTot += jet.constituents()[i].pt();
 	  }
 	}
-	else{
-	  ptTruthTot += jet.constituents()[i].pt();
-	}
       }
     }
-  }
-
-  return ptTruthTot/ptTot;
-}
-
-double TimingAnalysis::TimeFrac(PseudoJet jet){
-  
-  double totTimes=0;
-  double totHSTimes=0;
-  for (unsigned int i=0; i < jet.constituents().size(); i++){
-    PseudoJet pixel = jet.constituents()[i];
-    if(not pixel.user_info<TimingInfo>().isGhost()) continue;
-    totTimes++;
-    if(abs(pixel.user_info<TimingInfo>().time())<timefractioncut)
-      totHSTimes++;
+    
+    double frac=ptTruthTot/ptTot;
+    if(frac > maxFrac)
+      maxFrac=frac;
   }
   
-  return totHSTimes/totTimes;
+  return maxFrac;
 }
 
 bool TimingAnalysis::Ignore(Pythia8::Particle &p){

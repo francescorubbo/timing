@@ -20,6 +20,8 @@ using namespace fastjet;
 
 typedef vector<float> timingBranch;
 
+double distance(double eta, double phi, double truthEta, double truthPhi);
+
 class TimingDistribution{
  private:
   float _bunchsize;
@@ -73,7 +75,6 @@ class TimingAnalysis{
   distribution _dtype;
   double psi;
   double phi;
-  double timefractioncut;
   
   // Tree Vars ---------------------------------------
   int fTEventNumber;
@@ -114,11 +115,10 @@ class TimingAnalysis{
   
   void DeclareBranches();
   void ResetBranches();
-  void FillTree(JetVector jets);
+  void FillTree(JetVector jets, JetVector truthJets);
   void FillTruthTree(JetVector jets);
   double ComputeTime(PseudoJet jet, double &abstime);
-  double TruthFrac(PseudoJet jet);
-  double TimeFrac(PseudoJet jet);
+  double TruthFrac(PseudoJet jet, JetVector truthJets);
   bool Ignore(Pythia8::Particle &p);
 
   //Jet selection functions
