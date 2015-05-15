@@ -144,8 +144,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    }
    _maxEta= maxEta;
 
-   const double radius=1.2;
-   const double zbase=radius*sinh(_minEta);
+   const double zbase=3.5;
+   const double radius=zbase/sinh(_minEta);
    if(segmentation){
      tracker.reset(new TimingTracker(_pixelSize,radius,zbase));
    }
@@ -225,8 +225,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   if(smear)
     ths=ftvtxspread;
 
-  static const double radius = 1.2; // barrel radius=1.2 meter 
-  double z0 = radius*sinh(_minEta);
+  static const double z0 = 3.5; // FIX THIS! DEFINE Z0 ONLY IN ONE PLACE! 
 
   //Loop over Pileup Events
   for (int iPU = 0; iPU <= NPV; ++iPU) {
@@ -275,7 +274,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
-				     i,iPU,true,corrtime,time)); 
+				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time)); 
       particlesForJets.push_back(p); 
     }
     if (!_pythiaPU->next()) continue;
@@ -310,7 +309,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
     //0 for the primary vertex.
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
-				   ip,0, false,corrtime,time));  
+				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time));  
     
     particlesForJets.push_back(p);
     particlesForJets_np.push_back(p);
@@ -420,7 +419,7 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
        and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
       switch(timeMode){
       case highestPT:
-	pt = jet.constituents()[i].pt();
+	pt = jet.constituents()[i].user_info<TimingInfo>().pt();
 	if(pt>maxpt){
 	  maxpt = pt;
 	  time = jet.constituents()[i].user_info<TimingInfo>().time();
@@ -464,13 +463,20 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
 
 double TimingAnalysis::TruthFrac(PseudoJet jet){
 
-  double ptTot=0;
+  double ptTot=jet.pt();
   double ptTruthTot=0;
   for (unsigned int i=0; i < jet.constituents().size(); i++){
-    if(((not segmentation) or jet.constituents()[i].user_info<TimingInfo>().isGhost()) and (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100)){
-      ptTot += jet.constituents()[i].pt();
-      if(not jet.constituents()[i].user_info<TimingInfo>().pileup())
-	ptTruthTot += jet.constituents()[i].pt();
+    if (not jet.constituents()[i].user_info<TimingInfo>().pileup()){
+      if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
+	if(segmentation){
+	  if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
+	    ptTruthTot += jet.constituents()[i].pt();
+	  }
+	}
+	else{
+	  ptTruthTot += jet.constituents()[i].pt();
+	}
+      }
     }
   }
 
