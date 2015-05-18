@@ -165,6 +165,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    active_area.reset(new AreaDefinition(fastjet::active_area));
    bge.reset(new GridMedianBackgroundEstimator(_maxEta, grid_spacing));
    rescaling.reset(new BackgroundRescalingYPolynomial(1.1685397, 0, -0.0246807, 0, 5.94119e-05)); //function for rapidity rescaling of rho
+   bge->set_rescaling_class(rescaling.get());
    select_fwd.reset(new Selector(SelectorAbsRapRange(_minEta,_maxEta)));
  
    DeclareBranches();
@@ -332,13 +333,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   selectJets(particlesForJets,clustSeq,selectedJets);
 
   fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
-<<<<<<< HEAD
   selectedTruthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
-=======
-  selectJets(particlesForJets_np,clustSeqTruth,selectedTruthJets);  
   
   FillTree(selectedJets,selectedTruthJets);
->>>>>>> master
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
@@ -351,7 +348,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
 void TimingAnalysis::selectJets(JetVector &particlesForJets, fastjet::ClusterSequenceArea &clustSeq, JetVector &selectedJets){
   try{
-    bge->set_rescaling_class(rescaling.get());
     bge->set_particles(particlesForJets);
 
     fastjet::Subtractor subtractor(bge.get());    
@@ -478,23 +474,25 @@ double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
   double ptTot=jet.pt();
   double maxFrac=0;
 
-  for (auto ijet = truthJets.begin(); ijet != truthJets.end(); ijet++){
-    double eta=ijet->eta();
-    double phi=ijet->phi();
-
+  //for each truth jet
+  for (unsigned int tj = 0; tj < truthJets.size(); tj++){
     double ptTruthTot=0;
-    for (unsigned int i=0; i < jet.constituents().size(); i++){
-      double dist=distance(jet.constituents()[i].eta(),jet.constituents()[i].phi(),eta,phi);
-      if ((not jet.constituents()[i].user_info<TimingInfo>().pileup()) and (dist <= 0.4)){
-	if (abs(jet.constituents()[i].user_info<TimingInfo>().time()) < 100){
-	  if(segmentation){
-	    if(jet.constituents()[i].user_info<TimingInfo>().isGhost()){
-	      ptTruthTot += jet.constituents()[i].pt();
-	    }
-	  }
-	  else{
-	    ptTruthTot += jet.constituents()[i].pt();
-	  }
+    
+    //for each truth particle
+    for (unsigned int ti=0; ti < truthJets[tj].constituents().size(); ti++){
+      auto truthInfo = truthJets[tj].constituents()[ti].user_info<TimingInfo>();
+      int truthID = truthInfo.pythia_id();
+      
+      //for each particle in the main jet
+      for (unsigned int i=0; i < jet.constituents().size(); i++){
+	auto pInfo = jet.constituents()[i].user_info<TimingInfo>();
+	// if it is the identical particle, only use if we have timing info
+	if ((not pInfo.pileup()) and (truthID == pInfo.pythia_id()) and (abs(pInfo.time()) < 100)){
+	  //if using segmentation, only consider ghost particles
+	  if(segmentation and pInfo.isGhost())
+	    ptTruthTot += truthInfo.pt();
+	  else
+	    ptTruthTot += truthInfo.pt();
 	}
       }
     }

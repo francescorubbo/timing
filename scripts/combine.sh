@@ -1,9 +1,9 @@
 #!/bin/bash
 
-psis="1 2"
-mus="140"
-pixelSizes="0"
-profiles="0"
+psis="5"
+mus="200"
+pixelSizes="250 500"
+profiles="1"
 timeModes="0"
 
 path=files/*/
