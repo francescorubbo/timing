@@ -63,6 +63,7 @@ class TimingAnalysis{
   unique_ptr<JetDefinition> jetDef;
   unique_ptr<AreaDefinition> active_area;
   unique_ptr<GridMedianBackgroundEstimator> bge;
+  unique_ptr<FunctionOfPseudoJet<double> > rescaling;
   unique_ptr<Selector> select_fwd;
   unique_ptr<TimingTracker> tracker;
   
