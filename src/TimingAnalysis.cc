@@ -489,9 +489,7 @@ double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
 	// if it is the identical particle, only use if we have timing info
 	if ((not pInfo.pileup()) and (truthID == pInfo.pythia_id()) and (abs(pInfo.time()) < 100)){
 	  //if using segmentation, only consider ghost particles
-	  if(segmentation and pInfo.isGhost())
-	    ptTruthTot += truthInfo.pt();
-	  else
+	  if(not pInfo.isGhost())
 	    ptTruthTot += truthInfo.pt();
 	}
       }
