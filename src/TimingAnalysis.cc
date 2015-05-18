@@ -325,7 +325,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 
   if(segmentation){
     tracker->AddDetectedParticles(particlesForJets);
-    tracker->AddDetectedParticles(particlesForJets_np);
   }
 
   JetVector selectedJets,selectedTruthJets;
@@ -487,7 +486,7 @@ double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
       for (unsigned int i=0; i < jet.constituents().size(); i++){
 	auto pInfo = jet.constituents()[i].user_info<TimingInfo>();
 	// if it is the identical particle, only use if we have timing info
-	if ((not pInfo.pileup()) and (truthID == pInfo.pythia_id()) and (abs(pInfo.time()) < 100)){
+	if ((not pInfo.pileup()) and (truthID == pInfo.pythia_id())){
 	  //if using segmentation, only consider ghost particles
 	  if(not pInfo.isGhost())
 	    ptTruthTot += truthInfo.pt();
