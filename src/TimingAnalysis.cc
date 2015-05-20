@@ -470,13 +470,12 @@ double TimingAnalysis::ComputeTime(fastjet::PseudoJet jet, double &abstime){
 
 double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
 
-  double ptTot=jet.pt();
   double maxFrac=0;
 
   //for each truth jet
   for (unsigned int tj = 0; tj < truthJets.size(); tj++){
     double ptTruthTot=0;
-    
+    double ptTot=truthJets[tj].pt();
     //for each truth particle
     for (unsigned int ti=0; ti < truthJets[tj].constituents().size(); ti++){
       auto truthInfo = truthJets[tj].constituents()[ti].user_info<TimingInfo>();
