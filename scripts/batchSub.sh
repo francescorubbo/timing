@@ -37,13 +37,13 @@ chmod u+x $SubFileLoc
 Process=4
 bunchsize="0.075"
 psis="5"
-mus="80 140 200"
-pixelSizes="250 500"
+mus="500"
+pixelSizes="500"
 profiles="1"
 timeModes="0"
 Queue=short
-nevents=200
-njobs=50
+nevents=20
+njobs=500
 HSMode="SmearHSZT"
 PUMode="VaryZT"
 
