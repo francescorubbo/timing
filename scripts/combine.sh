@@ -1,7 +1,7 @@
 #!/bin/bash
 
 psis="5"
-mus="10"
+mus="500"
 pixelSizes="500"
 profiles="1"
 timeModes="0"

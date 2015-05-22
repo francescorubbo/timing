@@ -34,37 +34,70 @@ void TrackerPixel::detect(fastjet::PseudoJet &p){
 
 void TrackerPixel::getParticles(JetVector &detParticles){
 
+  //ghost particle pt low enough not to affect Clustering, high enough 
+  //to not cause error
   static const double pt=1e-10;
   unsigned long fnum=0;
   unsigned long bnum=0;
   unsigned long snum=0;
 
-  for(auto particle = particles.begin(); particle != particles.end(); ++particle){
-    fastjet::PseudoJet p;
-    double newEta=_eta;
-    double pixelID=pixelID_forward;
-    if(particle->eta() < 0){
-      newEta*=-1;
-      pixelID=pixelID_backward;
-      snum=bnum;
-      bnum++;
+  double minTimes[] = {999,999};
+  int iminTimes[] = {-1,-1};
+  //loop through all detected particles
+  for(int i=0;i<static_cast<int>(particles.size());i++){
+    double time=particles[i].user_info<TimingInfo>().time();
+    //if backwards
+    if(particles[i].eta() < 0){
+      bnum++; //count particle
+      //decide if it was detected first
+      if(time < minTimes[0]){
+	minTimes[0]=time;
+	iminTimes[0]=i;
+      }
     }
+    //if forwards
     else{
-      snum=fnum;
-      fnum++;
+      fnum++; //count particle
+      //decide if it was detected first
+       if(time < minTimes[0]){
+	minTimes[1]=time;
+	iminTimes[1]=i;
+      }
     }
-    p.reset_PtYPhiM(pt, newEta, _phi);
-    p.set_user_info(new TimingInfo(particle->user_info<TimingInfo>().pdg_id(),
-				   particle->user_info<TimingInfo>().charge(),
-				   particle->user_info<TimingInfo>().pythia_id(),
-				   particle->user_info<TimingInfo>().pv(),
-				   particle->user_info<TimingInfo>().pileup(),
-				   particle->user_info<TimingInfo>().pt(),
-				   particle->user_info<TimingInfo>().time(),
-				   particle->user_info<TimingInfo>().abstime(),
-				   pixelID,
-				   snum));
-    detParticles.push_back(p);    
+  }
+
+  //loop over first backwards and forwards particles
+  for(int i=0;i>2;i++){
+    //if we found a minimum time particle
+    if((iminTimes[i] > -1) and (iminTimes[i] < static_cast<int>(particles.size()))){
+      fastjet::PseudoJet p;
+      double newEta=_eta;
+      double pixelID=pixelID_forward;
+      //if backwards
+      if(particles[iminTimes[i]].eta() < 0){
+	newEta*=-1;
+	pixelID=pixelID_backward;
+	snum=bnum;
+      }
+      //if forwards
+      else{
+	snum=fnum;
+      }
+      //create particle
+      p.reset_PtYPhiM(pt, newEta, _phi);
+      p.set_user_info(new TimingInfo(particles[iminTimes[i]].user_info<TimingInfo>().pdg_id(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().charge(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().pythia_id(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().pv(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().pileup(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().pt(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().time(),
+				     particles[iminTimes[i]].user_info<TimingInfo>().abstime(),
+				     pixelID,
+				     snum));
+      //return particle
+      detParticles.push_back(p);    
+    }
   }
 }
 
