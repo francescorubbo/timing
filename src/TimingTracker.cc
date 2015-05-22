@@ -59,7 +59,7 @@ void TrackerPixel::getParticles(JetVector &detParticles){
     else{
       fnum++; //count particle
       //decide if it was detected first
-       if(time < minTimes[0]){
+       if(time < minTimes[1]){
 	minTimes[1]=time;
 	iminTimes[1]=i;
       }
