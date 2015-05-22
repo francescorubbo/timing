@@ -59,7 +59,7 @@ void TrackerPixel::getParticles(JetVector &detParticles){
     else{
       fnum++; //count particle
       //decide if it was detected first
-       if(time < minTimes[1]){
+      if(time < minTimes[1]){
 	minTimes[1]=time;
 	iminTimes[1]=i;
       }
@@ -67,9 +67,9 @@ void TrackerPixel::getParticles(JetVector &detParticles){
   }
 
   //loop over first backwards and forwards particles
-  for(int i=0;i>2;i++){
+  for(int i=0;i<2;i++){
     //if we found a minimum time particle
-    if((iminTimes[i] > -1) and (iminTimes[i] < static_cast<int>(particles.size()))){
+    if(iminTimes[i] > -1){
       fastjet::PseudoJet p;
       double newEta=_eta;
       double pixelID=pixelID_forward;
