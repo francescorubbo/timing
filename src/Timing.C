@@ -26,7 +26,7 @@ int main(int argc, char* argv[]){
   // Event loop
   cout << "Progress:" << endl;
   for (Int_t iev = 0; iev < settings.nEvents; iev++) {
-    if (iev%20==0)
+    if (iev%10==0)
       cout << "\tCurrent: " << iev << endl;
     analysis.AnalyzeEvent(iev, settings.pileup);
   }  
