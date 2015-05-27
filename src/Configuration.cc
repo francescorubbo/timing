@@ -5,6 +5,7 @@ Configuration::Configuration(int argc, char* argv[]){
     HSmode =smearMode::ZT;
     PUmode =smearMode::ZT;
     useCK     =false;
+    filterCharge=true;
     int profile;
     int timing;
 
@@ -25,7 +26,8 @@ Configuration::Configuration(int argc, char* argv[]){
       ("SmearHST",  "Smear Hard Scatter Vertex in Time")
       ("SmearHSZ",  "Smear Hard Scatter Vertex in Z (correcting time)")
       ("SmearHSZT", "Smear Hard Scatter Vertex in Time and Z (correcting time)")
-      ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0");
+      ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0")
+      ("KeepNeutral","Keep neutrals in timing tracker");
 
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
@@ -98,6 +100,16 @@ Configuration::Configuration(int argc, char* argv[]){
     else{
       cout <<"Varying Z and T of Pileup vertex" <<endl;
       PUmode=smearMode::ZT;
+    }
+
+    cout << "\t";
+    if(vm.count("KeepNeutral")){
+      cout << "Keeping Neutral Particles in Tracker" << endl;
+      filterCharge=false;
+    }
+    else{
+      cout << "Discarding Neutral Particles in Tracker" << endl;
+      filterCharge=true;
     }
 
     if((profile < 0) or (profile > 1)){

@@ -45,6 +45,7 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   if(q.segmentation){
     segmentation=true;
     _pixelSize=q.pixelSize;
+    filterCharge=q.filterCharge;
   }
   else
     segmentation=false;
@@ -152,7 +153,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    const double zbase=3.5;
    const double radius=zbase/sinh(_minEta);
    if(segmentation){
-     tracker.reset(new TimingTracker(_pixelSize,radius,zbase));
+     tracker.reset(new TimingTracker(_pixelSize,radius,zbase,filterCharge));
    }
    
    const double R=0.4;

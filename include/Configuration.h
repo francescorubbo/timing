@@ -43,6 +43,7 @@ public:
 
   bool   useCK;
   bool   segmentation;
+  bool   filterCharge;
   smearMode HSmode;
   smearMode PUmode;
   timingMode timemode;

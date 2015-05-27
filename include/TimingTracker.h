@@ -30,13 +30,14 @@ class TrackerPixel{
 
 class TimingTracker{
  private:
+  bool _filterCharge;
   double _pixelSize;
   double _radius;
   double _zbase;
   map<pixelCoordinate,shared_ptr<TrackerPixel> > pixels;
   pixelCoordinate getPixel(double eta, double phi);
  public:
-  TimingTracker(double pixelSize, double radius, double zbase);
+  TimingTracker(double pixelSize, double radius, double zbase, bool filterCharge=true);
   void DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles);
   void AddDetectedParticles(JetVector &truthParticles);
 };

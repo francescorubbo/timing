@@ -106,7 +106,7 @@ pixelCoordinate TimingTracker::getPixel(double eta, double phi){
   return make_pair(static_cast<int>(floor((xy.first)/_pixelSize)),static_cast<int>(floor((xy.second)/_pixelSize)));
 }
 
-TimingTracker::TimingTracker(double pixelSize, double radius, double zbase){
+TimingTracker::TimingTracker(double pixelSize, double radius, double zbase, bool filterCharge){
   if(pixelSize < 1e-7){
     cerr << "Invalid pixel size " << pixelSize << endl;
     exit(30);
@@ -114,6 +114,7 @@ TimingTracker::TimingTracker(double pixelSize, double radius, double zbase){
   _pixelSize=pixelSize;
   _radius=radius;
   _zbase=zbase;
+  _filterCharge=filterCharge;
 }
 
 void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles){
@@ -123,7 +124,10 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
   //fill tracker
   pixelCoordinate pi;
   for(auto particle = truthParticles.begin(); particle != truthParticles.end(); ++particle){
-    if(particle->user_info<TimingInfo>().charge()==0) continue; //use only charged particles
+    
+    if(_filterCharge and (particle->user_info<TimingInfo>().charge()==0)) 
+      continue; //use only charged particles
+
     pi=getPixel(particle->eta(),particle->phi());
     if(pixels.count(pi) == 0){
       double xMin = static_cast<double>(pi.first)*_pixelSize;

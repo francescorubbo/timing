@@ -109,6 +109,7 @@ class TimingAnalysis{
   bool smear;
   bool displace;
   bool segmentation;
+  bool filterCharge;
   timingMode timeMode;
 
   Pythia8::Pythia *_pythiaHS;
