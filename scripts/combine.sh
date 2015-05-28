@@ -2,7 +2,7 @@
 
 psis="5"
 mus="200"
-pixelSizes="100 250 500 1000 2000 5000"
+pixelSizes="500"
 profiles="1"
 timeModes="0"
 

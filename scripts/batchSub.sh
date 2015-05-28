@@ -37,15 +37,16 @@ chmod u+x $SubFileLoc
 Process=4
 bunchsize="0.075"
 psis="5"
-mus="50 100 150"
+mus="200"
 pixelSizes="500"
 profiles="1"
 timeModes="0"
-Queue=medium
-nevents=200
-njobs=50
+Queue=short
+nevents=25
+njobs=400
 HSMode="SmearHSZT"
 PUMode="VaryZT"
+flags="--KeepNeutral"
 
 OutDirFinal=`pwd`/files/${DateSuffix}
 mkdir -p $OutDirFinal
@@ -61,6 +62,7 @@ echo "JetTiming - "$timeModes
 echo "Bunchsize - "$bunchsize
 echo "HSMode - "$HSMode
 echo "PUMode - "$PUMode
+echo "Extra Flags - "$flags
 
 for psi in $psis ; do
     for mu in $mus ; do
@@ -88,7 +90,8 @@ for psi in $psis ; do
 			    --Profile $profile \
 			    --Psi $psi   \
 			    --PixelSize $pixelSize \
-			    --JetTiming ${tm}
+			    --JetTiming ${tm} \
+			    $flags
 		    done
 		done
 	    done
