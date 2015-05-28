@@ -1,0 +1,4 @@
+Note: you will need to have access to an installation of rootpy and root_numpy to use the 
+root functions, which in turn needs pyROOT and a full ROOT installation. I could not get 
+this to work on the cluster, but it's possible, I just didn't take the time to do it, but 
+it should be easy to do on your own machine
