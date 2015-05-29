@@ -46,6 +46,8 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
     segmentation=true;
     _pixelSize=q.pixelSize;
     filterCharge=q.filterCharge;
+    _minPz=q.minPz;
+    filterPz=q.filterPz;
   }
   else
     segmentation=false;
@@ -154,6 +156,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    const double radius=zbase/sinh(_minEta);
    if(segmentation){
      tracker.reset(new TimingTracker(_pixelSize,radius,zbase,filterCharge));
+     tracker->SetPzThreshold(_minPz);
    }
    
    const double R=0.4;

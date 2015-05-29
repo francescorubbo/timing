@@ -72,6 +72,7 @@ class TimingAnalysis{
   float _maxEta;
   double _R;
   double _pixelSize;
+  double _minPz;
 
   distribution _dtype;
   double psi;
@@ -110,6 +111,7 @@ class TimingAnalysis{
   bool displace;
   bool segmentation;
   bool filterCharge;
+  bool filterPz;
   timingMode timeMode;
 
   Pythia8::Pythia *_pythiaHS;

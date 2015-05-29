@@ -40,10 +40,12 @@ public:
   float  psi;
 
   float pixelSize;
+  float minPz;
 
   bool   useCK;
   bool   segmentation;
   bool   filterCharge;
+  bool   filterPz;
   smearMode HSmode;
   smearMode PUmode;
   timingMode timemode;

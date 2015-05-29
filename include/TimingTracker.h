@@ -31,6 +31,8 @@ class TrackerPixel{
 class TimingTracker{
  private:
   bool _filterCharge;
+  bool _filterPz;
+  double _minPz;
   double _pixelSize;
   double _radius;
   double _zbase;
@@ -38,6 +40,7 @@ class TimingTracker{
   pixelCoordinate getPixel(double eta, double phi);
  public:
   TimingTracker(double pixelSize, double radius, double zbase, bool filterCharge=true);
+  void SetPzThreshold(double minPz);
   void DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles);
   void AddDetectedParticles(JetVector &truthParticles);
 };

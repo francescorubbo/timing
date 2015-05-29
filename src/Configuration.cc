@@ -41,6 +41,7 @@ Configuration::Configuration(int argc, char* argv[]){
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("MaxEta",    po::value<float>(&maxEta)->default_value(4.3), "Minimum Pseudorapidity for Particles")
       ("PixelSize", po::value<float>(&pixelSize)->default_value(0), "Pixel Size for Segmentation (in microns)")
+      ("PzThreshold", po::value<float>(&minPz)->default_value(0), "Minimum longitudinal momentum ")
       ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
@@ -110,6 +111,16 @@ Configuration::Configuration(int argc, char* argv[]){
     else{
       cout << "Discarding Neutral Particles in Tracker" << endl;
       filterCharge=true;
+    }
+
+    cout << "\t";
+    if(minPz > 0){
+      cout << "Applying Pz Threshold " << minPz << endl;
+      filterPz=true;
+    }
+    else{
+      cout << "Applying no Pz Threshold" << endl;
+      filterPz=false;
     }
 
     if((profile < 0) or (profile > 1)){
@@ -188,6 +199,7 @@ void Configuration::print(){
        or (itr->first == "SmearHSZ")
        or (itr->first == "SmearHST")
        or (itr->first == "SmearHSZT")
+       or (itr->first == "KeepNeutral")
        ){
       cout << endl;
       continue;
