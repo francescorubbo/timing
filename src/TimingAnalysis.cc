@@ -158,7 +158,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    const double radius=zbase/sinh(_minEta);
    if(segmentation){
      tracker.reset(new TimingTracker(_pixelSize,radius,zbase,filterCharge));
-     tracker->SetPThreshold(_minP);
+     if(filterP)
+       tracker->SetPThreshold(_minP);
    }
    
    const double R=0.4;
