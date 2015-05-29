@@ -6,6 +6,7 @@ Configuration::Configuration(int argc, char* argv[]){
     PUmode =smearMode::ZT;
     useCK     =false;
     filterCharge=true;
+    trueVelocity=false;
     int profile;
     int timing;
 
@@ -27,7 +28,8 @@ Configuration::Configuration(int argc, char* argv[]){
       ("SmearHSZ",  "Smear Hard Scatter Vertex in Z (correcting time)")
       ("SmearHSZT", "Smear Hard Scatter Vertex in Time and Z (correcting time)")
       ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0")
-      ("KeepNeutral","Keep neutrals in timing tracker");
+      ("KeepNeutral","Keep neutrals in timing tracker")
+      ("TrueVelocity","Use true velocity for timing");
 
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
@@ -41,7 +43,7 @@ Configuration::Configuration(int argc, char* argv[]){
       ("MinEta",    po::value<float>(&minEta)->default_value(2.5), "Minimum Pseudorapidity for Particles")
       ("MaxEta",    po::value<float>(&maxEta)->default_value(4.3), "Minimum Pseudorapidity for Particles")
       ("PixelSize", po::value<float>(&pixelSize)->default_value(0), "Pixel Size for Segmentation (in microns)")
-      ("PzThreshold", po::value<float>(&minPz)->default_value(0), "Minimum longitudinal momentum ")
+      ("PThreshold", po::value<float>(&minP)->default_value(0), "Minimum longitudinal momentum ")
       ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
@@ -114,13 +116,23 @@ Configuration::Configuration(int argc, char* argv[]){
     }
 
     cout << "\t";
-    if(minPz > 0){
-      cout << "Applying Pz Threshold " << minPz << endl;
-      filterPz=true;
+    if(vm.count("TrueVelocity")){
+      cout << "Using True Velocity to Calculate Times" << endl;
+      trueVelocity=true;
     }
     else{
-      cout << "Applying no Pz Threshold" << endl;
-      filterPz=false;
+      cout << "Assuming Light-Speed for all particles" << endl;
+      trueVelocity=false;
+    }
+
+    cout << "\t";
+    if(minP > 0){
+      cout << "Applying P Threshold " << minP << endl;
+      filterP=true;
+    }
+    else{
+      cout << "Applying no P Threshold" << endl;
+      filterP=false;
     }
 
     if((profile < 0) or (profile > 1)){

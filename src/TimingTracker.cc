@@ -116,17 +116,17 @@ TimingTracker::TimingTracker(double pixelSize, double radius, double zbase, bool
   _zbase=zbase;
   _filterCharge=filterCharge;
 
-  _filterPz=false;
-  _minPz=0;
+  _filterP=false;
+  _minP=0;
 }
 
-void SetPzThreshold(double minPz){
-  if(minPz > 0){
-    _filterPz=true;
-    _minPz=minPz;
+void TimingTracker::SetPThreshold(double minP){
+  if(minP > 0){
+    _filterP=true;
+    _minP=minP;
   }
   else
-    cout << "TimingTracker::SetPzThreshold - Warning: Invalid Momentum" << endl;
+    cout << "TimingTracker::SetPThreshold - Warning: Invalid Momentum" << endl;
 }
 
 void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &detectedParticles){
@@ -139,8 +139,8 @@ void TimingTracker::DetectedParticles(JetVector &truthParticles, JetVector &dete
     
     if(_filterCharge and (particle->user_info<TimingInfo>().charge()==0)) 
       continue; //use only charged particles
-    if(_filterPz and (particle.pz() < _minPz))
-      continue; //use only higher pz particles
+    if(_filterP and (sqrt(particle->modp2()) < _minP))
+      continue; //use only higher |p| particles
 
     pi=getPixel(particle->eta(),particle->phi());
     if(pixels.count(pi) == 0){

@@ -46,13 +46,14 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
     segmentation=true;
     _pixelSize=q.pixelSize;
     filterCharge=q.filterCharge;
-    _minPz=q.minPz;
-    filterPz=q.filterPz;
+    _minP=q.minP;
+    filterP=q.filterP;
   }
   else
     segmentation=false;
 
   timeMode=q.timemode;
+  trueV=q.trueVelocity;
 
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
@@ -129,6 +130,7 @@ TimingAnalysis::~TimingAnalysis(){
     delete j0cltruth;
     delete j0clpixelID;
     delete j0clpixelNum;
+    delete j0clpdgid;
     delete truejpt;
     delete truejphi;
     delete truejeta;
@@ -156,7 +158,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    const double radius=zbase/sinh(_minEta);
    if(segmentation){
      tracker.reset(new TimingTracker(_pixelSize,radius,zbase,filterCharge));
-     tracker->SetPzThreshold(_minPz);
+     tracker->SetPThreshold(_minP);
    }
    
    const double R=0.4;
@@ -190,6 +192,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
 
    j0clpixelID = new timingBranch();
    j0clpixelNum = new timingBranch();
+   j0clpdgid = new timingBranch();
    
    truejpt = new timingBranch();  
    truejphi = new timingBranch();  
@@ -274,7 +277,16 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       
       //calculate time measured relative to if event was at 0
       double dist = dz*cosheta/sinheta;
-      double time = fabs(dist)/LIGHTSPEED + tvtx; //plus random time
+      double time = fabs(dist)/LIGHTSPEED; //plus random time
+      if(trueV){
+	double beta=_pythiaPU->event[i].pAbs()/_pythiaPU->event[i].e();
+	time/=beta;
+	if(beta > 1.001)
+	  cout << "Error: Invalid Beta value!!!" << endl;
+	else if(beta < 0.1)
+	  cout << "Warning: Beta below 0.1" << endl;
+      }
+      time+=tvtx;
       
       double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow(dz,2));
       double reftime = fabs(refdist)/LIGHTSPEED;
@@ -397,6 +409,7 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
       j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 1.0 : 0.0);
       j0clpixelID->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_id());
       j0clpixelNum->push_back(static_cast<double>(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_num()));
+      j0clpdgid->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pdg_id());
     }  
 }
 
@@ -543,6 +556,7 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0cltruth","std::vector<float>",&j0cltruth);
   tT->Branch("j0clpixelID","std::vector<float>",&j0clpixelID);
   tT->Branch("j0clpixelNum","std::vector<float>",&j0clpixelNum);
+  tT->Branch("j0clpdgid","std::vector<float>",&j0clpdgid);
 
   tT->Branch("truejpt", "std::vector<float>",&truejpt);
   tT->Branch("truejphi","std::vector<float>",&truejphi);
@@ -575,6 +589,7 @@ void TimingAnalysis::ResetBranches(){
       j0cltruth->clear();
       j0clpixelID->clear();
       j0clpixelNum->clear();
+      j0clpdgid->clear();
       truejpt->clear();
       truejphi->clear();
       truejeta->clear();

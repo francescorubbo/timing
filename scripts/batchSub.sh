@@ -42,11 +42,11 @@ pixelSizes="500"
 profiles="1"
 timeModes="0"
 Queue=short
-nevents=25
-njobs=400
+nevents=20
+njobs=500
 HSMode="SmearHSZT"
 PUMode="VaryZT"
-flags="--KeepNeutral"
+flags="--TrueVelocity"
 
 OutDirFinal=`pwd`/files/${DateSuffix}
 mkdir -p $OutDirFinal
