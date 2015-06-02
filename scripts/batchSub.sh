@@ -1,6 +1,7 @@
 #!/bin/bash
 
 [ "$USER" == "kurinsky" ] && WorkDir=/u/ki/kurinsky/ATLAS/
+[ "$USER" == "rubbo" ] && WorkDir=/u/at/rubbo/nfs/Timing/
 # add similar line if you are not kurinsky
 
 SubFileLoc=`pwd`/_submitSingleJob.sh
@@ -37,7 +38,7 @@ chmod u+x $SubFileLoc
 Process=4
 bunchsize="0.075"
 psis="5"
-mus="200"
+mus="140"
 pixelSizes="500"
 profiles="1"
 timeModes="0"

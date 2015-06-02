@@ -20,6 +20,7 @@ setup_fastjet() {
 setup_boost() {
     export BOOSTINCDIR=/usr/include
     export BOOSTLIBLOCATION=/usr/lib64
+    export LD_LIBRARY_PATH=/u/at/rubbo/local/lib/:$LD_LIBRARY_PATH
 }
 
 setup_ROOT
