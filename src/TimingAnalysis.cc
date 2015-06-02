@@ -493,11 +493,12 @@ double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
   //for each truth jet
   for (unsigned int tj = 0; tj < truthJets.size(); tj++){
     double ptTruthTot=0;
-    double ptTot=truthJets[tj].pt();
+    double ptTot=0;
     //for each truth particle
     for (unsigned int ti=0; ti < truthJets[tj].constituents().size(); ti++){
       auto truthInfo = truthJets[tj].constituents()[ti].user_info<TimingInfo>();
       int truthID = truthInfo.pythia_id();
+      ptTot += truthInfo.pt();
       
       //for each particle in the main jet
       for (unsigned int i=0; i < jet.constituents().size(); i++){
