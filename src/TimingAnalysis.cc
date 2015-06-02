@@ -298,7 +298,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
-				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time)); 
+				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time*1e9)); 
       particlesForJets.push_back(p); 
     }
     if (!_pythiaPU->next()) continue;
@@ -407,7 +407,7 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
       j0cleta->push_back(jets[0].constituents()[icl].eta());
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
       j0clabstime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().abstime());
-      j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 1.0 : 0.0);
+      j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 0.0 : 1.0);
       j0clpixelID->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_id());
       j0clpixelNum->push_back(static_cast<double>(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_num()));
       j0clpdgid->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pdg_id());
