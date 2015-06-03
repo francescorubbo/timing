@@ -4,6 +4,8 @@ from root_numpy import root2rec
 from pylab import *
 import numpy
 from numpy import sin,cos,arctan2,sinh,arcsinh,pi
+from itertools import chain
+from matplotlib.patches import Circle
 
 def SetupATLAS():
     rootpy.log.basic_config_colorized()
@@ -35,13 +37,58 @@ def pixelNum(filename):
     leaves=['j0clpixelNum']
     array = root2rec(filename,'tree',leaves)
     pnum=array['j0clpixelNum']
-    pnumOut=list()
-    for i in range(0,len(pnum)):
-        for j in range(0,len(pnum[i])):
-            if(pnum[i][j] > -1):
-                pnumOut.append(pnum[i][j])
 
-    return numpy.array(pnumOut)
+    pchain = chain.from_iterable(pnum)
+    pnums=numpy.array(list(pchain))
+    gpts=numpy.where(pnums > -1)
+    return pnums[gpts]
+
+ParticleMass={11:0.51,
+              22:0.0,
+              130:497.0,
+              211:140.0,
+              321:494.0,
+              2112:940.0,
+              2212:938.0}
+
+ParticleName={11:'$e^{\pm}$',
+              22:'$\gamma$',
+              130:'$K_{L0}$',
+              211:'$\pi^{\pm}$',
+              321:'$K^{\pm}$',
+              2112:'$N(\overline{N})$',
+              2212:'$p^{\pm}$'}
+
+def Gamma(pdgid,pt,eta):
+    mass=ParticleMass[abs(pdgid)]/1.0e3
+    if(mass != 0):
+        ptot2=pow(pt*cosh(eta),2)
+        mass2=pow(mass,2)
+        return sqrt(1+ptot2/mass2)
+    else:
+        return 1.0e3
+
+def GammaPtPzID(filename,truthOnly=False):
+    leaves=['j0clpdgid','j0clpt','j0cleta','j0cltruth']
+    array = root2rec(filename,'tree',leaves)
+    ids=array['j0clpdgid']
+    etas=array['j0cleta']
+    pts=array['j0clpt']
+    truth=array['j0cltruth']
+
+    gammas=list()
+    pTout=list()
+    pz=list()
+    idsOut=list()
+    limit=min([len(ids),100])
+    for i in range(0,limit):
+        for j in range(0,len(ids[i])):
+            if((not truthOnly) or (truth[i][j] == 0)):
+                gammas.append(Gamma(ids[i][j],pts[i][j],etas[i][j]))
+                pTout.append(pts[i][j])
+                pz.append(pts[i][j]*sinh(etas[i][j]))
+                idsOut.append(abs(ids[i][j]))
+    return numpy.array(gammas),numpy.array(pTout),numpy.array(pz),numpy.array(idsOut)
 
 def jetMultiplicity(filename):
     leaves=['jtruth','jpt','truejpt','jeta','jphi','truejeta','truejphi']
@@ -94,7 +141,7 @@ def ptCorrection(filename,ptMin=0.0,ptMax=1000.0):
     print(len(correction))
     return numpy.array(correction)
 
-def ptFractionTruthBranch(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,maxPt=1000):
+def ptFractionTruthBranch(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,maxPt=100000,absTime=True):
     leaves=['jtruth','jtime','jeta','jpt']
     array = root2rec(filename,'tree',leaves)
 
@@ -106,7 +153,10 @@ def ptFractionTruthBranch(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,maxP
     times=numpy.zeros(len(alltimes))
     for j in range(0,len(alltimes)):
         if(len(alltimes[j]) > 0):
-            times[j]=abs(alltimes[j][0])
+            if(absTime):
+                times[j]=abs(alltimes[j][0])
+            else:
+                times[j]=alltimes[j][0]
         else:
             times[j]=999
 
@@ -231,7 +281,7 @@ def chargeParticleDistance(filename,minEta=0,maxEta=10,minPt=0,maxPt=1000):
 
     return numpy.array(jetTruth),numpy.array(dists),numpy.array(jetTimes)
 
-def ptFractionTruthBranchFrac(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,maxPt=1000):
+def ptFractionTruthBranchFrac(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,maxPt=100000):
     leaves=['jtruth','jtime','jeta','jpt']
     array = root2rec(filename,'tree',leaves)
 
@@ -441,3 +491,105 @@ def resolutionArray(sigma,layers,efficiencies):
     for i in range(0,len(efficiencies)):
         results.append(resolution(sigma,layers,efficiencies[i]))
     return numpy.array(results)
+
+def bins (dat): return int(ceil(pow(len(dat),0.333)))
+def binSize (dat): return 2.4*std(dat)/pow(len(dat),0.333)
+def nbins (dat): return int(ceil((max(dat)-min(dat))/binSize(dat)))
+def nbins2 (dat): return int(ceil((max(dat)-min(dat))/binSize(dat)/4))
+def contour2d (x,y,color='grey',colors='black',showImage=False):
+    scatter(x,y,marker=".",s=1,alpha=0.25,color=color)
+    H, xedges, yedges = histogram2d(y, x, bins=(nbins2(y), nbins2(x)),normed=True)
+    H=H*binSize(x)*binSize(y)*16
+    scale=numpy.max(H)
+    extent = [yedges[0], yedges[-1], xedges[0], xedges[-1]]
+    levels = (0.9*scale,0.75*scale,0.5*scale,0.25*scale,0.1*scale)
+    cset = contour(H, levels, origin="lower",linewidths=(2.0,1.75, 1.5, 1.25, 1.0),colors=colors,extent=extent)
+    clabel(cset, inline=1, fontsize=10, fmt="%0.3f")
+    for c in cset.collections:
+        c.set_linestyle("solid")
+    if(showImage):
+        imshow(H, interpolation='nearest', origin='low',extent=extent,cmap=cm.binary)
+
+colors=['black','blue','red','green','orange','magenta','cyan','brown']
+
+def y(eta):
+    return 3.5/numpy.sinh(eta)
+
+def eta_y(y):
+    return numpy.arcsinh(3.5/y)
+
+def etaBinsize(sigma,etaMin=2.5,etaMax=4.3):
+    xmin=y(etaMax)
+    xmax=y(etaMin)
+    x=numpy.arange(xmin,xmax-sigma,sigma)
+    binsizeArray=eta_y(x)-eta_y(x+sigma)
+    etaArray=eta_y(x)
+    return etaArray,binsizeArray
+
+def plotEvent(filename,eventnum=0):
+    leaves=['j0cleta','j0clphi','j0cltruth','j0cltime','j0clpixelID','jeta','jphi','jtruth','truejeta','truejphi']
+
+    print(filename)
+    array = root2rec(filename,'tree',leaves)
+
+    etas=array['j0cleta']
+    phis=array['j0clphi']
+    truths=array['j0cltruth']
+    times=array['j0cltime']
+    ids=array['j0clpixelID']
+    jetTruth=array['jtruth']
+
+    frac=array['jtruth'][eventnum][0]
+    jetEta=array['jeta'][eventnum]
+    jetPhi=array['jphi'][eventnum]
+    tjetEta=array['truejeta'][eventnum]
+    tjetPhi=array['truejphi'][eventnum]
+    
+    eta=etas[eventnum]
+    phi=phis[eventnum]
+    truth=truths[eventnum]
+    zerotimes=abs(times[eventnum])
+    ID=ids[eventnum].astype(float64)
+    
+    pixpts=numpy.where((zerotimes < 100) & (ID != 0))
+    print(len(pixpts[0]))
+    etapix=eta[pixpts]
+    phipix=phi[pixpts]
+    
+    inds=numpy.where((zerotimes < 100) & (ID == 0))
+    zerotimes=zerotimes[inds]
+    truth=truth[inds]
+    eta=eta[inds]
+    phi=phi[inds]
+    ID=ID[inds]
+    
+    hpts=numpy.where(truth == 0)
+    ppts=numpy.where(truth == 1)
+    
+    for j in range(0,len(jetEta)):
+        xy=(jetEta[j],jetPhi[j])
+        c=Circle(xy,radius=0.4,facecolor='green',alpha=0.1)
+        gca().add_patch(c)
+    for j in range(0,len(tjetEta)):
+        xy=(tjetEta[j],tjetPhi[j])
+        c=Circle(xy,radius=0.4,facecolor='blue',alpha=0.1)
+        gca().add_patch(c)
+    scatter(jetEta,jetPhi,color='green',label="Reco Jet")
+    scatter(tjetEta,tjetPhi,color='blue',label="Truth Jet")
+    scatter(eta[ppts],phi[ppts],marker='.',color='black',label='pileup')
+    scatter(eta[hpts],phi[hpts],marker='.',color='red',label='hard scatter')    
+    if(len(pixpts[0]) > 0):
+        scatter(etapix,phipix,marker='o',alpha=0.25,s=30,color='grey',label='rebinned')
+
+    R=0.4
+    limit=R+0.3
+    if(frac >= 0.5):
+        jtype="Hard Scatter"
+    else:
+        jtype="Pileup"
+    text(jetEta[0]-limit+0.1,jetPhi[0]-limit+0.1,jtype,fontsize=16)
+    xlabel('$\eta$')
+    ylabel('$\phi$')
+    xlim(jetEta[0]-limit,jetEta[0]+limit)
+    ylim(jetPhi[0]-limit,jetPhi[0]+limit+0.2)
+    legend(loc='upper left',numpoints=1,frameon=False,ncol=2)
