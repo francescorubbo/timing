@@ -131,6 +131,11 @@ TimingAnalysis::~TimingAnalysis(){
     delete j0clpixelID;
     delete j0clpixelNum;
     delete j0clpdgid;
+    delete j1clpt;
+    delete j1clphi;
+    delete j1cleta;
+    delete j1clabstime;
+    delete j1cltruth;
     delete truejpt;
     delete truejphi;
     delete truejeta;
@@ -194,6 +199,12 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    j0clpixelID = new timingBranch();
    j0clpixelNum = new timingBranch();
    j0clpdgid = new timingBranch();
+
+   j1clpt = new timingBranch();  
+   j1clphi = new timingBranch();  
+   j1cleta = new timingBranch();  
+   j1clabstime = new timingBranch();
+   j1cltruth = new timingBranch();
    
    truejpt = new timingBranch();  
    truejphi = new timingBranch();  
@@ -298,7 +309,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
-				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time)); 
+				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time*1e9)); 
       particlesForJets.push_back(p); 
     }
     if (!_pythiaPU->next()) continue;
@@ -407,10 +418,18 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
       j0cleta->push_back(jets[0].constituents()[icl].eta());
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
       j0clabstime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().abstime());
-      j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 1.0 : 0.0);
+      j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 0.0 : 1.0);
       j0clpixelID->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_id());
       j0clpixelNum->push_back(static_cast<double>(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_num()));
       j0clpdgid->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pdg_id());
+    }  
+  if(jets.size()>1)
+    for (unsigned int icl=0; icl<jets[1].constituents().size(); icl++){    
+      j1clpt->push_back(jets[1].constituents()[icl].pt());
+      j1clphi->push_back(jets[1].constituents()[icl].phi());
+      j1cleta->push_back(jets[1].constituents()[icl].eta());
+      j1clabstime->push_back(jets[1].constituents()[icl].user_info<TimingInfo>().abstime());
+      j1cltruth->push_back(jets[1].constituents()[icl].user_info<TimingInfo>().pileup() ? 0.0 : 1.0);
     }  
 }
 
@@ -493,11 +512,12 @@ double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
   //for each truth jet
   for (unsigned int tj = 0; tj < truthJets.size(); tj++){
     double ptTruthTot=0;
-    double ptTot=truthJets[tj].pt();
+    double ptTot=0;
     //for each truth particle
     for (unsigned int ti=0; ti < truthJets[tj].constituents().size(); ti++){
       auto truthInfo = truthJets[tj].constituents()[ti].user_info<TimingInfo>();
       int truthID = truthInfo.pythia_id();
+      ptTot += truthInfo.pt();
       
       //for each particle in the main jet
       for (unsigned int i=0; i < jet.constituents().size(); i++){
@@ -559,6 +579,12 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0clpixelNum","std::vector<float>",&j0clpixelNum);
   tT->Branch("j0clpdgid","std::vector<float>",&j0clpdgid);
 
+  tT->Branch("j1clpt","std::vector<float>",&j1clpt);
+  tT->Branch("j1clphi","std::vector<float>",&j1clphi);
+  tT->Branch("j1cleta","std::vector<float>",&j1cleta);
+  tT->Branch("j1clabstime","std::vector<float>",&j1clabstime);
+  tT->Branch("j1cltruth","std::vector<float>",&j1cltruth);
+
   tT->Branch("truejpt", "std::vector<float>",&truejpt);
   tT->Branch("truejphi","std::vector<float>",&truejphi);
   tT->Branch("truejeta","std::vector<float>",&truejeta);
@@ -591,6 +617,11 @@ void TimingAnalysis::ResetBranches(){
       j0clpixelID->clear();
       j0clpixelNum->clear();
       j0clpdgid->clear();
+      j1clpt->clear();
+      j1clphi->clear();
+      j1cleta->clear();
+      j1clabstime->clear();
+      j1cltruth->clear();
       truejpt->clear();
       truejphi->clear();
       truejeta->clear();

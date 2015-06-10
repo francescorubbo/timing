@@ -99,6 +99,12 @@ class TimingAnalysis{
   timingBranch *j0clpixelID;
   timingBranch *j0clpixelNum;
   timingBranch *j0clpdgid;
+
+  timingBranch *j1clpt;
+  timingBranch *j1clphi;
+  timingBranch *j1cleta;
+  timingBranch *j1clabstime;
+  timingBranch *j1cltruth;
   
   timingBranch *truejpt;
   timingBranch *truejphi;
