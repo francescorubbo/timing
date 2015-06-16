@@ -53,7 +53,6 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
     segmentation=false;
 
   timeMode=q.timemode;
-  trueV=q.trueVelocity;
 
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;

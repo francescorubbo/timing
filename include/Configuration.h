@@ -44,7 +44,6 @@ public:
 
   bool   useCK;
   bool   segmentation;
-  bool   trueVelocity;
   bool   filterCharge;
   bool   filterP;
   smearMode HSmode;

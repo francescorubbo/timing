@@ -6,7 +6,6 @@ Configuration::Configuration(int argc, char* argv[]){
     PUmode =smearMode::ZT;
     useCK     =false;
     filterCharge=true;
-    trueVelocity=false;
     int profile;
     int timing;
 
@@ -28,8 +27,7 @@ Configuration::Configuration(int argc, char* argv[]){
       ("SmearHSZ",  "Smear Hard Scatter Vertex in Z (correcting time)")
       ("SmearHSZT", "Smear Hard Scatter Vertex in Time and Z (correcting time)")
       ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0")
-      ("KeepNeutral","Keep neutrals in timing tracker")
-      ("TrueVelocity","Use true velocity for timing");
+      ("KeepNeutral","Keep neutrals in timing tracker");
 
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
@@ -113,16 +111,6 @@ Configuration::Configuration(int argc, char* argv[]){
     else{
       cout << "Discarding Neutral Particles in Tracker" << endl;
       filterCharge=true;
-    }
-
-    cout << "\t";
-    if(vm.count("TrueVelocity")){
-      cout << "Using True Velocity to Calculate Times" << endl;
-      trueVelocity=true;
-    }
-    else{
-      cout << "Assuming Light-Speed for all particles" << endl;
-      trueVelocity=false;
     }
 
     cout << "\t";
