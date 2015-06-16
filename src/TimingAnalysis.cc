@@ -287,6 +287,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       double zbase = z0*sgn(eta); //displace due to new location of Hard-Scatter Vertex
       double dz = zbase-zvtx;
       double corrEta = asinh(zbase*sinheta/dz);
+      double hsEta = asinh((zbase-zhs)*sinheta/dz);
       
       //calculate time measured relative to if event was at 0
       double betaz=_pythiaPU->event[i].pz()/_pythiaPU->event[i].e();
@@ -295,7 +296,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       double time = fabs(dz)/(betaz*LIGHTSPEED); //plus random time
       time+=tvtx;
       
-      double reftime = fabs((zbase-zhs)/(LIGHTSPEED*sinh(corrEta)/cosh(corrEta)));
+      double reftime = fabs((zbase-zhs)/(LIGHTSPEED*sinh(hsEta)/cosh(hsEta)));
       double corrtime = (time-reftime)*1e9;
       if((fabs(corrEta)< _minEta) or (fabs(corrEta)>_maxEta))
 	time = corrtime = -999.;
@@ -332,7 +333,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     double time = fabs(dz)/(betaz*LIGHTSPEED) + ths; //plus random time  
 
     double corrEta = asinh(zbase*sinheta/dz);
-    double reftime = fabs((dz)/(LIGHTSPEED*sinh(corrEta)/cosh(corrEta)));
+    double reftime = fabs((dz)/(LIGHTSPEED*sinheta/cosh(eta)));
     double corrtime = (time-reftime)*1e9;
     if ((fabs(corrEta)<_minEta) or (fabs(corrEta)>_maxEta))
       time = corrtime = -999.;
