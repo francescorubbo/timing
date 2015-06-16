@@ -53,6 +53,7 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
     segmentation=false;
 
   timeMode=q.timemode;
+  simMagneticField=q.magfield;
 
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
@@ -297,10 +298,16 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       
       double reftime = fabs((zbase-zhs)/(LIGHTSPEED*sinh(hsEta)/cosh(hsEta)));
       double corrtime = (time-reftime)*1e9;
+      double corrphi = p.phi();
       if((fabs(corrEta)< _minEta) or (fabs(corrEta)>_maxEta))
 	time = corrtime = -999.;
-      
-      p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
+      else if(simMagneticField){
+	double charge = _pythiaPU->event[i].charge()*1.609e-19;
+	double omega = charge*2./(_pythiaPU->event[i].e()*1.782661845e-27);
+	corrphi = p.phi() + omega*time;
+	if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
+      }
+      p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
 				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time*1e9)); 
@@ -334,10 +341,17 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     double corrEta = asinh(zbase*sinheta/dz);
     double reftime = fabs((dz)/(LIGHTSPEED*sinheta/cosh(eta)));
     double corrtime = (time-reftime)*1e9;
+
+    double corrphi = p.phi();
     if ((fabs(corrEta)<_minEta) or (fabs(corrEta)>_maxEta))
       time = corrtime = -999.;
-    
-    p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
+    else if(simMagneticField){
+      double charge = _pythiaHS->event[ip].charge()*1.609e-19;
+      double omega = charge*2./(_pythiaHS->event[ip].e()*1.782661845e-27);
+      corrphi = p.phi() + omega*time;
+      if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
+    }
+    p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
     //0 for the primary vertex.
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
 				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time*1e9));  
