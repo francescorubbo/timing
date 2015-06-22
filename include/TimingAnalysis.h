@@ -119,7 +119,7 @@ class TimingAnalysis{
   bool segmentation;
   bool filterCharge;
   bool filterP;
-  bool trueV;
+  bool simMagneticField;
   timingMode timeMode;
 
   Pythia8::Pythia *_pythiaHS;

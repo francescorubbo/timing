@@ -47,7 +47,7 @@ nevents=20
 njobs=500
 HSMode="SmearHSZT"
 PUMode="VaryZT"
-flags="--TrueVelocity"
+flags=""
 
 OutDirFinal=`pwd`/files/${DateSuffix}
 mkdir -p $OutDirFinal

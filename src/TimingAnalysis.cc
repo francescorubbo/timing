@@ -53,7 +53,7 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
     segmentation=false;
 
   timeMode=q.timemode;
-  trueV=q.trueVelocity;
+  simMagneticField=q.magfield;
 
   if(fDebug) 
     cout << "TimingAnalysis::TimingAnalysis End " << endl;
@@ -254,8 +254,10 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   static const double z0 = 3.5; // FIX THIS! DEFINE Z0 ONLY IN ONE PLACE! 
 
   //Loop over Pileup Events
-  for (int iPU = 0; iPU <= NPV; ++iPU) {
+  for (int iPU = 0; iPU < NPV; ++iPU) {
     
+    cout << "filling w/ pileup" << endl;
+
     //determine random vertex position in z-t space
     randomVariates=rnd->get(_dtype);
     double zvtx = 0;
@@ -276,37 +278,38 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 		  _pythiaPU->event[i].py(), 
 		  _pythiaPU->event[i].pz(),
 		  _pythiaPU->event[i].e() ); 
+
+      //apply magnetic field
       
       //extract event information
       double eta = p.rapidity();
       double sinheta = sinh(eta);
-      double cosheta = cosh(eta);
       
       //calculate eta from displacement (minEta pos)
       double zbase = z0*sgn(eta); //displace due to new location of Hard-Scatter Vertex
       double dz = zbase-zvtx;
       double corrEta = asinh(zbase*sinheta/dz);
+      double hsEta = asinh((zbase-zhs)*sinheta/dz);
       
       //calculate time measured relative to if event was at 0
-      double dist = dz*cosheta/sinheta;
-      double time = fabs(dist)/LIGHTSPEED; //plus random time
-      if(trueV){
-	double beta=_pythiaPU->event[i].pAbs()/_pythiaPU->event[i].e();
-	time/=beta;
-	if(beta > 1.001)
-	  cout << "Error: Invalid Beta value!!!" << endl;
-	else if(beta < 0.1)
-	  cout << "Warning: Beta below 0.1" << endl;
-      }
+      double betaz=_pythiaPU->event[i].pz()/_pythiaPU->event[i].e();
+      if(betaz > 1.001)
+	cout << "Error: Invalid Beta value!!!" << endl;
+      double time = fabs(dz)/(betaz*LIGHTSPEED); //plus random time
       time+=tvtx;
       
-      double refdist = sqrt(pow(dist,2)+pow((zbase-zhs),2)-pow(dz,2));
-      double reftime = fabs(refdist)/LIGHTSPEED;
+      double reftime = fabs((zbase-zhs)/(LIGHTSPEED*sinh(hsEta)/cosh(hsEta)));
       double corrtime = (time-reftime)*1e9;
+      double corrphi = p.phi();
       if((fabs(corrEta)< _minEta) or (fabs(corrEta)>_maxEta))
 	time = corrtime = -999.;
-      
-      p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
+      else if(simMagneticField){
+	double charge = _pythiaPU->event[i].charge()*1.609e-19;
+	double omega = charge*2./(_pythiaPU->event[i].e()*1.782661845e-27);
+	corrphi = p.phi() + omega*time;
+	if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
+      }
+      p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
 				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time*1e9)); 
@@ -332,19 +335,28 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     //calculate eta from displacement (minEta pos)
     double zbase = z0*sgn(eta); //displace due to new location of Hard-Scatter Vertex    
     double dz = zbase-zhs;
-    double dist = dz*cosh(eta)/sinheta;
-    double time = fabs(dist)/LIGHTSPEED + ths; //plus random time  
-    time *= 1e9;
+    double betaz=_pythiaHS->event[ip].pz()/_pythiaHS->event[ip].e();
+    if(betaz > 1.001)
+      cout << "Error: Invalid Beta value!!!" << endl;
+    double time = fabs(dz)/(betaz*LIGHTSPEED) + ths; //plus random time  
 
     double corrEta = asinh(zbase*sinheta/dz);
-    double corrtime = ths*1e9;
+    double reftime = fabs((dz)/(LIGHTSPEED*sinheta/cosh(eta)));
+    double corrtime = (time-reftime)*1e9;
+
+    double corrphi = p.phi();
     if ((fabs(corrEta)<_minEta) or (fabs(corrEta)>_maxEta))
       time = corrtime = -999.;
-    
-    p.reset_PtYPhiM(p.pt(), corrEta, p.phi());
+    else if(simMagneticField){
+      double charge = _pythiaHS->event[ip].charge()*1.609e-19;
+      double omega = charge*2./(_pythiaHS->event[ip].e()*1.782661845e-27);
+      corrphi = p.phi() + omega*time;
+      if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
+    }
+    p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
     //0 for the primary vertex.
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
-				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time));  
+				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time*1e9));  
     
     particlesForJets.push_back(p);
     particlesForJets_np.push_back(p);

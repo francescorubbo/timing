@@ -6,7 +6,7 @@ Configuration::Configuration(int argc, char* argv[]){
     PUmode =smearMode::ZT;
     useCK     =false;
     filterCharge=true;
-    trueVelocity=false;
+    magfield = false;
     int profile;
     int timing;
 
@@ -29,7 +29,7 @@ Configuration::Configuration(int argc, char* argv[]){
       ("SmearHSZT", "Smear Hard Scatter Vertex in Time and Z (correcting time)")
       ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0")
       ("KeepNeutral","Keep neutrals in timing tracker")
-      ("TrueVelocity","Use true velocity for timing");
+      ("MagneticField","Propagate charged particles through 2T magnetic field");
 
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
@@ -116,13 +116,13 @@ Configuration::Configuration(int argc, char* argv[]){
     }
 
     cout << "\t";
-    if(vm.count("TrueVelocity")){
-      cout << "Using True Velocity to Calculate Times" << endl;
-      trueVelocity=true;
+    if(vm.count("MagneticField")){
+      cout << "Propagating charged particles through magnetic field" << endl;
+      magfield=true;
     }
     else{
-      cout << "Assuming Light-Speed for all particles" << endl;
-      trueVelocity=false;
+      cout << "No magnetic field" << endl;
+      filterCharge=false;
     }
 
     cout << "\t";
