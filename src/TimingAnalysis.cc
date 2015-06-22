@@ -254,8 +254,10 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   static const double z0 = 3.5; // FIX THIS! DEFINE Z0 ONLY IN ONE PLACE! 
 
   //Loop over Pileup Events
-  for (int iPU = 0; iPU <= NPV; ++iPU) {
+  for (int iPU = 0; iPU < NPV; ++iPU) {
     
+    cout << "filling w/ pileup" << endl;
+
     //determine random vertex position in z-t space
     randomVariates=rnd->get(_dtype);
     double zvtx = 0;
