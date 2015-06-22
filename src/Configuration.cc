@@ -297,7 +297,9 @@ void Configuration::ConfigurePythiaSignal(Pythia8::Pythia* hs){
       hs->readString("HiggsSM:ff2Hff(t:WW) = on");
       hs->readString("25:m0 = 125");
       hs->readString("25:onMode = off");
-      hs->readString("25:onIfAny = 22");
+      hs->readString("25:onIfAny = 23");
+      hs->readString("23:onMode = off");
+      hs->readString("23:onIfAny = 12 14 16");
       hs->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */); //this has to be the last line!
    }else{ 
      throw std::invalid_argument("received invalid 'process'");
