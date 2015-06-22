@@ -256,8 +256,6 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   //Loop over Pileup Events
   for (int iPU = 0; iPU < NPV; ++iPU) {
     
-    cout << "filling w/ pileup" << endl;
-
     //determine random vertex position in z-t space
     randomVariates=rnd->get(_dtype);
     double zvtx = 0;
