@@ -128,6 +128,8 @@ TimingAnalysis::~TimingAnalysis(){
     delete j0cltime;
     delete j0clabstime;
     delete j0cltruth;
+    delete j0clid;
+    delete j0clcharge;
     delete j0clpixelID;
     delete j0clpixelNum;
     delete j0clpdgid;
@@ -195,6 +197,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    j0cltime = new timingBranch();  
    j0clabstime = new timingBranch();
    j0cltruth = new timingBranch();
+   j0clid = new timingBranch();
+   j0clcharge = new timingBranch();
 
    j0clpixelID = new timingBranch();
    j0clpixelNum = new timingBranch();
@@ -429,6 +433,8 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
       j0clabstime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().abstime());
       j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 0.0 : 1.0);
+      j0clid->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pythia_id());
+      j0clcharge->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().charge());
       j0clpixelID->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_id());
       j0clpixelNum->push_back(static_cast<double>(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_num()));
       j0clpdgid->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pdg_id());
@@ -585,6 +591,8 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0cltime","std::vector<float>",&j0cltime);
   tT->Branch("j0clabstime","std::vector<float>",&j0clabstime);
   tT->Branch("j0cltruth","std::vector<float>",&j0cltruth);
+  tT->Branch("j0clid","std::vector<float>",&j0clid);
+  tT->Branch("j0clcharge","std::vector<float>",&j0clcharge);
   tT->Branch("j0clpixelID","std::vector<float>",&j0clpixelID);
   tT->Branch("j0clpixelNum","std::vector<float>",&j0clpixelNum);
   tT->Branch("j0clpdgid","std::vector<float>",&j0clpdgid);
@@ -624,6 +632,8 @@ void TimingAnalysis::ResetBranches(){
       j0cltime->clear();
       j0clabstime->clear();
       j0cltruth->clear();
+      j0clid->clear();
+      j0clcharge->clear();
       j0clpixelID->clear();
       j0clpixelNum->clear();
       j0clpdgid->clear();
