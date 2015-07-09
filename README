@@ -3,6 +3,7 @@
 Install:
 	1.) source setupTiming.sh
 	2.) make
+	3.) mkdir -p $HOME/local/bin
 	3.) make install (moves to ~/local/bin)
 	4.) Timing --help
 
