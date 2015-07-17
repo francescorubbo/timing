@@ -43,6 +43,19 @@ def pixelNum(filename):
     gpts=numpy.where(pnums > -1)
     return pnums[gpts]
 
+def flattenAll(NDarray):
+    NDchain=chain.from_iterable(NDarray)
+    return numpy.array(list(NDchain))
+
+def particlePixelTruthTime(filename):
+    leaves=['j0cltruth','j0cltime','j0clpixelNum']
+    array = root2rec(filename,'tree',leaves)
+    truth=flattenAll(array['j0cltruth'])
+    times=flattenAll(array['j0cltime'])
+    pnums=flattenAll(array['j0clpixelNum'])
+    gpts=numpy.where(pnums > -1)
+    return truth[gpts],times[gpts]
+
 ParticleMass={11:0.51,
               22:0.0,
               130:497.0,
@@ -497,7 +510,7 @@ def binSize (dat): return 2.4*std(dat)/pow(len(dat),0.333)
 def nbins (dat): return int(ceil((max(dat)-min(dat))/binSize(dat)))
 def nbins2 (dat): return int(ceil((max(dat)-min(dat))/binSize(dat)/4))
 def contour2d (x,y,color='grey',colors='black',showImage=False):
-    scatter(x,y,marker=".",s=1,alpha=0.25,color=color)
+    scatter(x,y,marker=".",s=1,alpha=0.1,color=color)
     H, xedges, yedges = histogram2d(y, x, bins=(nbins2(y), nbins2(x)),normed=True)
     H=H*binSize(x)*binSize(y)*16
     scale=numpy.max(H)
@@ -563,8 +576,8 @@ def plotEvent(filename,eventnum=0):
     phi=phi[inds]
     ID=ID[inds]
     
-    hpts=numpy.where(truth == 0)
-    ppts=numpy.where(truth == 1)
+    hpts=numpy.where(truth == 1)
+    ppts=numpy.where(truth == 0)
     
     for j in range(0,len(jetEta)):
         xy=(jetEta[j],jetPhi[j])
