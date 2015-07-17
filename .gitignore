@@ -8,3 +8,7 @@ scripts/files/*
 scripts/logs/*
 scripts/_*
 scripts/batch*_*
+python/*.pyc
+plots/*
+*.png
+*.eps
