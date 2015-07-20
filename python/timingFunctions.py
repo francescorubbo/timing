@@ -242,6 +242,68 @@ def timeFractionTruthBranch(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,ma
 
     return numpy.array(jetTruth),numpy.array(timefrac)
 
+from findhsutils import gettime
+def timeFractionDensityBased(filename,keepAll=False,minEta=0,maxEta=10,minPt=0,maxPt=1000,
+                             rcut=0.3,cut=0.075,ptCentering=False,timeres=0.):
+    leaves=['jtruth','jeta','jphi','jpt','j0cleta','j0clphi','j0cltime','j0clpixelID','j0clpt','j0cltruth']
+    array = root2rec(filename,'tree',leaves)
+
+    jtruths=array['jtruth']
+    jetas=array['jeta']
+    jphis=array['jphi']
+    jpts=array['jpt']
+
+    pixids=array['j0clpixelID']
+    etas=array['j0cleta']
+    phis=array['j0clphi']
+    pts=array['j0clpt']
+    times=array['j0cltime']
+    truths=array['j0cltruth']
+
+    jetTruth=list()
+    timefrac=list()
+    for j in range(0,len(jtruths)):
+        time=times[j]
+        truth=truths[j]
+        if(len(time) > 0):
+            jtruth=jtruths[j][0]
+            jeta=abs(jetas[j][0])
+            jphi=abs(jphis[j][0])
+            jpt=jpts[j][0]
+            if((jeta >= minEta) and (jeta <= maxEta) and (jpt >= minPt) and (jpt <= maxPt)):
+                jetTruth.append(htype(jtruth))
+                pnums=pixids[j]
+                if(ptCentering):
+                    pti=numpy.argmax(pts[j])
+                    deta=etas[j]-etas[j][pti]
+                    dphi=phis[j]-phis[j][pti]
+                else:
+                    deta=etas[j]-jeta
+                    dphi=phis[j]-jphi
+                dist=sqrt(pow(deta,2)+pow(dphi,2))
+                twidth = 0.01
+                if timeres>0.: 
+                    time = time + random.normal(0.,timeres,len(time))
+                    twidth = timeres
+                tmeas = time[(time>-990.) & (pnums != 0) & (dist < rcut)]
+                if len(tmeas):
+                    tcenter = gettime(tmeas,twidth)
+                else: tcenter = 0.
+                gpts=numpy.where((time-tcenter < cut) & (dist < rcut) & (pnums != 0))
+                dpts=numpy.where((dist < rcut) & (pnums != 0))
+                if(len(dpts[0]) > 0):
+                    timefrac.append(1-float(len(gpts[0]))/float(len(dpts[0])))
+                else:
+                    timefrac.append(-1)
+            elif(keepAll):
+                jetTruth.append(-1)
+                timefrac.append(-1)
+        elif (keepAll):
+            jetTruth.append(-1)
+            timefrac.append(-1)
+
+    return numpy.array(jetTruth),numpy.array(timefrac)
+
 def chargeParticleDistance(filename,minEta=0,maxEta=10,minPt=0,maxPt=1000):
     leaves=['jtruth','jtime','jeta','jphi','jpt','j0cleta','j0clphi','j0clpixelID','j0clpt','j0cltime']
     array = root2rec(filename,'tree',leaves)
