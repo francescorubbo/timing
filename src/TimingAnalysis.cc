@@ -297,7 +297,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       double betaz=_pythiaPU->event[i].pz()/_pythiaPU->event[i].e();
       if(betaz > 1.001)
 	cout << "Error: Invalid Beta value!!!" << endl;
-      double time = fabs(dz)/(betaz*LIGHTSPEED); //plus random time
+      double time = fabs(dz/(betaz*LIGHTSPEED)); //plus random time
       time+=tvtx;
       
       double reftime = fabs((zbase-zhs)/(LIGHTSPEED*sinh(hsEta)/cosh(hsEta)));
