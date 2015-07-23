@@ -340,12 +340,11 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
     double betaz=_pythiaHS->event[ip].pz()/_pythiaHS->event[ip].e();
     if(betaz > 1.001)
       cout << "Error: Invalid Beta value!!!" << endl;
-    double time = fabs(dz)/(betaz*LIGHTSPEED) + ths; //plus random time  
+    double time = fabs(dz/(betaz*LIGHTSPEED)) + ths; //plus random time  
 
     double corrEta = asinh(zbase*sinheta/dz);
     double reftime = fabs((dz)/(LIGHTSPEED*sinheta/cosh(eta)));
     double corrtime = (time-reftime)*1e9;
-
     double corrphi = p.phi();
     if ((fabs(corrEta)<_minEta) or (fabs(corrEta)>_maxEta))
       time = corrtime = -999.;
