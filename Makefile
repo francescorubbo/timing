@@ -19,7 +19,7 @@ Timing:  lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so lib/TimingTrac
 	$(CXXFLAGS) -Wno-shadow  \
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
-	-L$(FASTJETLOCATION)/lib `$(FASTJETLOCATION)/bin/fastjet-config --libs --plugins ` -lSubjetJVF  -lVertexJets \
+	-L$(FASTJETLOCATION)/lib `$(FASTJETLOCATION)/bin/fastjet-config --libs` \
 	-L$(PYTHIA8LOCATION)/lib -lpythia8 -llhapdfdummy \
 	-L$(BOOSTLIBLOCATION) -lboost_program_options 
 
@@ -28,14 +28,14 @@ Conversion: lib/Conversion.so lib/TimingTracker.so
 	$(CXXFLAGS) -Wno-shadow  \
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
-	-L$(FASTJETLOCATION)/lib `$(FASTJETLOCATION)/bin/fastjet-config --libs --plugins ` -lSubjetJVF  -lVertexJets \
+	-L$(FASTJETLOCATION)/lib `$(FASTJETLOCATION)/bin/fastjet-config --libs` \
 	-L$(PYTHIA8LOCATION)/lib -lpythia8 -llhapdfdummy \
 	-L$(BOOSTLIBLOCATION) -lboost_program_options
 
 lib/Conversion.so: src/Conversion.cpp
 	$(CXX) -o $@ -c $<  \
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
-	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags`  \
 	-I./include -L./lib \
 	-I$(PYTHIA8LOCATION)/include \
 	-I $(BOOSTINCDIR) \
@@ -44,7 +44,7 @@ lib/Conversion.so: src/Conversion.cpp
 lib/Timing.so: src/Timing.C lib/TimingAnalysis.so   
 	$(CXX) -o $@ -c $<  \
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
-	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include -L./lib \
 	-I$(PYTHIA8LOCATION)/include \
 	-I $(BOOSTINCDIR) \
@@ -53,7 +53,7 @@ lib/Timing.so: src/Timing.C lib/TimingAnalysis.so
 lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h 
 	$(CXX) -o $@ -c $<  \
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
-	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs` 
@@ -61,7 +61,7 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 lib/Configuration.so : src/Configuration.cc include/Configuration.h
 	$(CXX) -o $@ -c $<  \
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
-	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs`
@@ -69,7 +69,7 @@ lib/Configuration.so : src/Configuration.cc include/Configuration.h
 lib/TimingTracker.so : src/TimingTracker.cc include/TimingTracker.h
 	$(CXX) -o $@ -c $<  \
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
-	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags --plugins` -lSubjetJVF -lVertexJets \
+	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs`
