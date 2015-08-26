@@ -44,7 +44,7 @@ Configuration::Configuration(int argc, char* argv[]){
       ("MaxEta",    po::value<float>(&maxEta)->default_value(4.3), "Minimum Pseudorapidity for Particles")
       ("PixelSize", po::value<float>(&pixelSize)->default_value(0), "Pixel Size for Segmentation (in microns)")
       ("PThreshold", po::value<float>(&minP)->default_value(0), "Minimum longitudinal momentum ")
-      ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD\n - 5: VBF H->gammagamma")
+      ("Proc",      po::value<int>(&proc)->default_value(4), "Process:\n - 1: Z'T->ttbar\n - 2: W'->WZ+lept\n - 3: W'->WZ+had\n - 4: QCD\n - 5: VBF H->inv\n - 6: Z(->inv)+jets")
       ("pThatMin",  po::value<float>(&pThatmin)->default_value(100), "pThatMin for QCD")
       ("pThatMax",  po::value<float>(&pThatmax)->default_value(500), "pThatMax for QCD")
       ("BosonMass", po::value<float>(&boson_mass)->default_value(1500), "Z' or W' mass in GeV");
@@ -298,6 +298,13 @@ void Configuration::ConfigurePythiaSignal(Pythia8::Pythia* hs){
       hs->readString("25:m0 = 125");
       hs->readString("25:onMode = off");
       hs->readString("25:onIfAny = 23");
+      hs->readString("23:onMode = off");
+      hs->readString("23:onIfAny = 12 14 16");
+      hs->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */); //this has to be the last line!
+   }else if(proc == 6){
+      std::stringstream bosonmass_str; 
+      hs->readString("WeakBosonAndParton:qqbar2gmZg = on");
+      hs->readString("WeakBosonAndParton:qg2gmZq = on");
       hs->readString("23:onMode = off");
       hs->readString("23:onIfAny = 12 14 16");
       hs->init(2212 /* p */, 2212 /* p */, 14000. /* TeV */); //this has to be the last line!
