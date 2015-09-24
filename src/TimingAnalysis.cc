@@ -125,6 +125,7 @@ TimingAnalysis::~TimingAnalysis(){
     delete j0clpt;
     delete j0clphi;
     delete j0cleta;
+    delete j0clm;
     delete j0cltime;
     delete j0clabstime;
     delete j0cltruth;
@@ -194,6 +195,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    j0clpt = new timingBranch();  
    j0clphi = new timingBranch();  
    j0cleta = new timingBranch();  
+   j0clm = new timingBranch();  
    j0cltime = new timingBranch();  
    j0clabstime = new timingBranch();
    j0cltruth = new timingBranch();
@@ -281,8 +283,8 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 		  _pythiaPU->event[i].pz(),
 		  _pythiaPU->event[i].e() ); 
 
-      //apply magnetic field
-      
+      //apply magnetic field     
+
       //extract event information
       double eta = p.rapidity();
       double sinheta = sinh(eta);
@@ -311,7 +313,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 	corrphi = p.phi() + omega*time;
 	if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
       }
-      p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
+      // p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
 				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time*1e9)); 
@@ -354,7 +356,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       corrphi = p.phi() + omega*time;
       if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
     }
-    p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
+    // p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
     //0 for the primary vertex.
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
 				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time*1e9));  
@@ -429,6 +431,7 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
       j0clpt->push_back(jets[0].constituents()[icl].pt());
       j0clphi->push_back(jets[0].constituents()[icl].phi());
       j0cleta->push_back(jets[0].constituents()[icl].eta());
+      j0clm->push_back(jets[0].constituents()[icl].m());
       j0cltime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().time());
       j0clabstime->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().abstime());
       j0cltruth->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pileup() ? 0.0 : 1.0);
@@ -587,6 +590,7 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0clpt","std::vector<float>",&j0clpt);
   tT->Branch("j0clphi","std::vector<float>",&j0clphi);
   tT->Branch("j0cleta","std::vector<float>",&j0cleta);
+  tT->Branch("j0clm","std::vector<float>",&j0clm);
   tT->Branch("j0cltime","std::vector<float>",&j0cltime);
   tT->Branch("j0clabstime","std::vector<float>",&j0clabstime);
   tT->Branch("j0cltruth","std::vector<float>",&j0cltruth);
@@ -628,6 +632,7 @@ void TimingAnalysis::ResetBranches(){
       j0clpt->clear();
       j0clphi->clear();
       j0cleta->clear();
+      j0clm->clear();
       j0cltime->clear();
       j0clabstime->clear();
       j0cltruth->clear();
