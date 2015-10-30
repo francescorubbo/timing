@@ -44,6 +44,7 @@ public:
 
   bool   useCK;
   bool   segmentation;
+  bool   storeallparticles;
   bool   magfield;
   bool   filterCharge;
   bool   filterP;

@@ -84,6 +84,8 @@ class TimingAnalysis{
   float fzvtxspread;
   float ftvtxspread;
   
+  timingBranch *zpu;
+
   timingBranch *jpt;
   timingBranch *jphi;
   timingBranch *jeta;
@@ -97,6 +99,7 @@ class TimingAnalysis{
   timingBranch *j0cltime;
   timingBranch *j0clabstime;
   timingBranch *j0cltruth;
+  timingBranch *j0clpu;
   timingBranch *j0clid;
   timingBranch *j0clcharge;
   timingBranch *j0clpixelID;
@@ -120,6 +123,7 @@ class TimingAnalysis{
   bool smear;
   bool displace;
   bool segmentation;
+  bool storeallparticles;
   bool filterCharge;
   bool filterP;
   bool simMagneticField;

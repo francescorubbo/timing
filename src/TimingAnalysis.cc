@@ -52,6 +52,8 @@ TimingAnalysis::TimingAnalysis(Pythia8::Pythia *pythiaHS, Pythia8::Pythia *pythi
   else
     segmentation=false;
 
+  storeallparticles = q.storeallparticles;
+
   timeMode=q.timemode;
   simMagneticField=q.magfield;
 
@@ -116,6 +118,7 @@ TimingAnalysis::~TimingAnalysis(){
   }
 
   if(jpt != NULL){
+    delete zpu;
     delete jpt;
     delete jphi;
     delete jeta;
@@ -129,6 +132,7 @@ TimingAnalysis::~TimingAnalysis(){
     delete j0cltime;
     delete j0clabstime;
     delete j0cltruth;
+    delete j0clpu;
     delete j0clid;
     delete j0clcharge;
     delete j0clpixelID;
@@ -185,6 +189,8 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
  
    DeclareBranches();
    
+   zpu = new timingBranch();  
+
    jpt = new timingBranch();  
    jphi = new timingBranch();  
    jeta = new timingBranch();  
@@ -199,6 +205,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    j0cltime = new timingBranch();  
    j0clabstime = new timingBranch();
    j0cltruth = new timingBranch();
+   j0clpu = new timingBranch();
    j0clid = new timingBranch();
    j0clcharge = new timingBranch();
 
@@ -270,6 +277,9 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       zvtx = randomVariates.first;
     if(randomT)
       tvtx = randomVariates.second;
+
+    if(storeallparticles)
+      zpu->push_back(zvtx);
     
     //Loop over pileup particles
     for (int i = 0; i < _pythiaPU->event.size(); ++i) {
@@ -377,7 +387,20 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
   fastjet::ClusterSequenceArea clustSeqTruth(particlesForJets_np, *jetDef, *active_area);
   selectedTruthJets = sorted_by_pt(clustSeqTruth.inclusive_jets(10.));
   
-  FillTree(selectedJets,selectedTruthJets);
+  if(!storeallparticles)
+    FillTree(selectedJets,selectedTruthJets);
+  else
+    for(unsigned int icl=0;icl<particlesForJets.size();++icl){
+      j0clpt    ->push_back(particlesForJets[icl].pt());
+      j0clphi   ->push_back(particlesForJets[icl].phi());
+      j0cleta   ->push_back(particlesForJets[icl].eta());
+      j0clm     ->push_back(particlesForJets[icl].m());
+      j0clcharge->push_back(particlesForJets[icl].user_info<TimingInfo>().charge());
+      j0clpdgid->push_back(particlesForJets[icl].user_info<TimingInfo>().pdg_id());
+      j0cltruth->push_back(particlesForJets[icl].user_info<TimingInfo>().pileup() ? 0.0 : 1.0);
+      j0clpu->push_back(particlesForJets[icl].user_info<TimingInfo>().pv());
+    }
+
   FillTruthTree(selectedTruthJets);
   
   tT->Fill();
@@ -580,6 +603,8 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("NPV",&fTNPV,"NPV/I");
   tT->Branch("zvtxspread",&fzvtxspread,"zvtxspread/F");
   tT->Branch("tvtxspread",&ftvtxspread,"tvtxspread/F"); 
+  tT->Branch("zpu","std::vector<float>",&zpu);
+
   tT->Branch("jpt","std::vector<float>",&jpt);
   tT->Branch("jphi","std::vector<float>",&jphi);
   tT->Branch("jeta","std::vector<float>",&jeta);
@@ -594,6 +619,7 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("j0cltime","std::vector<float>",&j0cltime);
   tT->Branch("j0clabstime","std::vector<float>",&j0clabstime);
   tT->Branch("j0cltruth","std::vector<float>",&j0cltruth);
+  tT->Branch("j0clpu","std::vector<float>",&j0clpu);
   tT->Branch("j0clid","std::vector<float>",&j0clid);
   tT->Branch("j0clcharge","std::vector<float>",&j0clcharge);
   tT->Branch("j0clpixelID","std::vector<float>",&j0clpixelID);
@@ -623,6 +649,8 @@ void TimingAnalysis::ResetBranches(){
       fzvtxspread = -1;
       ftvtxspread = -1;
 
+      zpu->clear();
+
       jpt->clear();
       jphi->clear();
       jeta->clear();
@@ -636,6 +664,7 @@ void TimingAnalysis::ResetBranches(){
       j0cltime->clear();
       j0clabstime->clear();
       j0cltruth->clear();
+      j0clpu->clear();
       j0clid->clear();
       j0clcharge->clear();
       j0clpixelID->clear();

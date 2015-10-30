@@ -7,6 +7,7 @@ Configuration::Configuration(int argc, char* argv[]){
     useCK     =false;
     filterCharge=true;
     magfield = false;
+    storeallparticles = false;
     int profile;
     int timing;
 
@@ -29,7 +30,9 @@ Configuration::Configuration(int argc, char* argv[]){
       ("SmearHSZT", "Smear Hard Scatter Vertex in Time and Z (correcting time)")
       ("ForceCK",   "Force Crab-Kissing PDF even if Phi=Psi=0")
       ("KeepNeutral","Keep neutrals in timing tracker")
-      ("MagneticField","Propagate charged particles through 2T magnetic field");
+      ("MagneticField","Propagate charged particles through 2T magnetic field")
+      ("StoreAllParticles","Store all particles");
+
 
     po::options_description sim_desc("Simulation Settings");
     sim_desc.add_options()
@@ -122,7 +125,17 @@ Configuration::Configuration(int argc, char* argv[]){
     }
     else{
       cout << "No magnetic field" << endl;
-      filterCharge=false;
+      magfield=false;
+    }
+
+    cout << "\t";
+    if(vm.count("StoreAllParticles")){
+      cout << "Store all particles" << endl;
+      storeallparticles=true;
+    }
+    else{
+      cout << "Store only particles in leading jets" << endl;
+      storeallparticles=false;
     }
 
     cout << "\t";
