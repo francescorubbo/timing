@@ -323,7 +323,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
 	corrphi = p.phi() + omega*time;
 	if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
       }
-      // p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
+      p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
       
       p.set_user_info(new TimingInfo(_pythiaPU->event[i].id(),_pythiaPU->event[i].charge(),
 				     i,iPU,true,_pythiaPU->event[i].pT(),corrtime,time*1e9)); 
@@ -366,7 +366,7 @@ void TimingAnalysis::AnalyzeEvent(int ievt, int NPV){
       corrphi = p.phi() + omega*time;
       if(abs(corrphi)>2*PI) corrphi = fmod(corrphi,2*PI);
     }
-    // p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
+    p.reset_PtYPhiM(p.pt(), corrEta, corrphi);
     //0 for the primary vertex.
     p.set_user_info(new TimingInfo(_pythiaHS->event[ip].id(),_pythiaHS->event[ip].charge(),
 				   ip,0, false,_pythiaHS->event[ip].pT(),corrtime,time*1e9));  
