@@ -35,16 +35,16 @@ chmod u+x $SubFileLoc
 #----------------
 # OPTIONS
 
-Process=4
+Process=5
 bunchsize="0.075"
-psis="5"
-mus="140"
+psis="0"
+mus="200"
 pixelSizes="500"
-profiles="1"
+profiles="0"
 timeModes="0"
-Queue=short
-nevents=20
-njobs=500
+Queue=medium
+nevents=100
+njobs=1000
 HSMode="SmearHSZT"
 PUMode="VaryZT"
 flags=""
@@ -77,7 +77,7 @@ for psi in $psis ; do
 		    for (( ii=1; ii<=$njobs; ii++ )) ;  do
 			OutDir=/scratch/${DateSuffix}_${ii}/
 			
-			bsub -q ${Queue} -R rhel60 -o $LogPrefix${ii}.log \
+			bsub -q ${Queue} -W60 -R rhel60 -o $LogPrefix${ii}.log \
 			    $SubFileLoc ${WorkDir} ${OutDir} ${OutDirFinal} \
 			    Timing.sh  \
 			    --Pileup $mu                 \
