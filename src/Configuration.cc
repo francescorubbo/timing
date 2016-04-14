@@ -252,7 +252,18 @@ void Configuration::print(){
 void Configuration::ConfigurePythiaSignal(Pythia8::Pythia* hs){
 
     hs->readString("Print:quiet=on");
-    hs->readString("Random:setSeed = on"); 
+    hs->readString("Random:setSeed = on");
+
+    //ATLAS tune
+    hs->readString("Tune:pp = 5");
+    hs->readString("PDF:useLHAPDF = on");
+    hs->readString("PDF:LHAPDFset = cteq6ll.LHpdf");
+    hs->readString("BeamRemnants:primordialKThard = 1.74948");
+    hs->readString("SpaceShower:alphaSorder = 2");
+    hs->readString("SpaceShower:alphaSvalue = 0.118");
+    hs->readString("SpaceShower:pT0Ref = 1.923589");
+    hs->readString("MultipartonInteractions:pT0Ref = 2.002887");
+
     std::stringstream ss; 
     ss << "Random:seed = " << seed;
     hs->readString(ss.str());

@@ -20,7 +20,8 @@ Timing:  lib/Timing.so lib/TimingAnalysis.so lib/Configuration.so lib/TimingTrac
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
 	-L$(FASTJETLOCATION)/lib `$(FASTJETLOCATION)/bin/fastjet-config --libs` \
-	-L$(PYTHIA8LOCATION)/lib -lpythia8 -llhapdfdummy \
+	-L$(LHAPDFLOCATION)/lib `$(LHAPDFLOCATION)/bin/lhapdf-config --ldflags` \
+	-L$(PYTHIA8LOCATION)/lib `$(PYTHIA8LOCATION)/bin/pythia8-config --libs --lhapdf` \
 	-L$(BOOSTLIBLOCATION) -lboost_program_options 
 
 Conversion: lib/Conversion.so lib/TimingTracker.so
@@ -29,7 +30,8 @@ Conversion: lib/Conversion.so lib/TimingTracker.so
 	`root-config --glibs` -lEG -lEGPythia8 \
 	-I./include -L./lib \
 	-L$(FASTJETLOCATION)/lib `$(FASTJETLOCATION)/bin/fastjet-config --libs` \
-	-L$(PYTHIA8LOCATION)/lib -lpythia8 -llhapdfdummy \
+	-L$(LHAPDFLOCATION)/lib `$(LHAPDFLOCATION)/bin/lhapdf-config --ldflags` \
+	-L$(PYTHIA8LOCATION)/lib `$(PYTHIA8LOCATION)/bin/pythia8-config --libs --lhapdf` \
 	-L$(BOOSTLIBLOCATION) -lboost_program_options
 
 lib/Conversion.so: src/Conversion.cpp
@@ -37,6 +39,7 @@ lib/Conversion.so: src/Conversion.cpp
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
 	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags`  \
 	-I./include -L./lib \
+	-I$(LHAPDFLOCATION)/include \
 	-I$(PYTHIA8LOCATION)/include \
 	-I $(BOOSTINCDIR) \
 	`root-config --cflags`
@@ -46,6 +49,7 @@ lib/Timing.so: src/Timing.C lib/TimingAnalysis.so
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
 	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include -L./lib \
+	-I$(LHAPDFLOCATION)/include \
 	-I$(PYTHIA8LOCATION)/include \
 	-I $(BOOSTINCDIR) \
 	`root-config --cflags` 
@@ -55,6 +59,7 @@ lib/TimingAnalysis.so : src/TimingAnalysis.cc include/TimingAnalysis.h
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
 	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include \
+	-I$(LHAPDFLOCATION)/include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs` 
 
@@ -63,6 +68,7 @@ lib/Configuration.so : src/Configuration.cc include/Configuration.h
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
 	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include \
+	-I$(LHAPDFLOCATION)/include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs`
 
@@ -71,6 +77,7 @@ lib/TimingTracker.so : src/TimingTracker.cc include/TimingTracker.h
 	$(CXXFLAGS) -Wno-shadow -fPIC -shared \
 	`$(FASTJETLOCATION)/bin/fastjet-config --cxxflags` \
 	-I./include \
+	-I$(LHAPDFLOCATION)/include \
 	-I$(PYTHIA8LOCATION)/include \
 	`root-config --cflags --libs`
 

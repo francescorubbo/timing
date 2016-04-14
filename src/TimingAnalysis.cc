@@ -125,6 +125,7 @@ TimingAnalysis::~TimingAnalysis(){
     delete jtime;
     delete jabstime;
     delete jtruth;
+    delete j0rpt;
     delete j0clpt;
     delete j0clphi;
     delete j0cleta;
@@ -198,6 +199,7 @@ void TimingAnalysis::Initialize(float minEta, float maxEta, distribution dtype, 
    jabstime = new timingBranch();
    jtruth = new timingBranch();
 
+   j0rpt = new timingBranch();  
    j0clpt = new timingBranch();  
    j0clphi = new timingBranch();  
    j0cleta = new timingBranch();  
@@ -449,7 +451,8 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
     jtruth->push_back(TruthFrac(jets[ijet],TruthJets));
   }
   
-  if(jets.size()>0)
+  if(jets.size()>0){
+    TruthRpT(jets[0],*j0rpt,fTNPV);
     for (unsigned int icl=0; icl<jets[0].constituents().size(); icl++){    
       j0clpt->push_back(jets[0].constituents()[icl].pt());
       j0clphi->push_back(jets[0].constituents()[icl].phi());
@@ -463,7 +466,8 @@ void TimingAnalysis::FillTree(JetVector jets, JetVector TruthJets){
       j0clpixelID->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_id());
       j0clpixelNum->push_back(static_cast<double>(jets[0].constituents()[icl].user_info<TimingInfo>().pixel_num()));
       j0clpdgid->push_back(jets[0].constituents()[icl].user_info<TimingInfo>().pdg_id());
-    }  
+    }
+  }
   if(jets.size()>1)
     for (unsigned int icl=0; icl<jets[1].constituents().size(); icl++){    
       j1clpt->push_back(jets[1].constituents()[icl].pt());
@@ -580,12 +584,34 @@ double TimingAnalysis::TruthFrac(PseudoJet jet, JetVector truthJets){
   return maxFrac;
 }
 
+void TimingAnalysis::TruthRpT(PseudoJet jet, timingBranch &rpt,int NPV){
+  // rpt.clear();
+
+  //for each vertex
+  for (int iPU = 0; iPU < NPV; ++iPU) {
+    
+    float totpt = 0;
+    float ptfromvertex = 0;
+
+    //for each particle in the main jet
+    for (unsigned int i=0; i < jet.constituents().size(); i++){
+      auto pInfo = jet.constituents()[i].user_info<TimingInfo>();
+      totpt += pInfo.pt();
+      // use only pileup particles from the vertex considered
+      if (pInfo.pileup() && pInfo.pv()>iPU-0.5 && pInfo.pv()<iPU+0.5)
+	ptfromvertex += pInfo.pt();
+    }//particle loop
+    rpt.push_back(ptfromvertex/totpt);
+  }//vertex loop
+  sort(rpt.begin(),rpt.end());
+}
+
 bool TimingAnalysis::Ignore(Pythia8::Particle &p){
   if (!p.isFinal() )      
     return true;
   switch(abs(p.id())){
   case 12:
-  case 13:
+  // case 13:
   case 14:
   case 16:
     return true;
@@ -612,6 +638,7 @@ void TimingAnalysis::DeclareBranches(){
   tT->Branch("jabstime","std::vector<float>",&jabstime);
   tT->Branch("jtruth","std::vector<float>",&jtruth);
 
+  tT->Branch("j0rpt","std::vector<float>",&j0rpt);
   tT->Branch("j0clpt","std::vector<float>",&j0clpt);
   tT->Branch("j0clphi","std::vector<float>",&j0clphi);
   tT->Branch("j0cleta","std::vector<float>",&j0cleta);
@@ -657,6 +684,7 @@ void TimingAnalysis::ResetBranches(){
       jtime->clear();
       jabstime->clear();
       jtruth->clear();
+      j0rpt->clear();
       j0clpt->clear();
       j0clphi->clear();
       j0cleta->clear();

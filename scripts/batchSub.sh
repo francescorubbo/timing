@@ -38,11 +38,11 @@ chmod u+x $SubFileLoc
 Process=5
 bunchsize="0.075"
 psis="0"
-mus="200"
-pixelSizes="500"
+mus="0"
+pixelSizes="0"
 profiles="0"
 timeModes="0"
-Queue=medium
+Queue=atlas-t3
 nevents=100
 njobs=1000
 HSMode="SmearHSZT"

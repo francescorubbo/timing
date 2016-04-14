@@ -11,10 +11,13 @@ setup_ROOT() {
 }
 
 setup_fastjet() {
-	export FASTJETLOCATION=/u/at/rubbo/nfs/Software/fastjet-3.0.3/fastjet-install/
-	#export FASTJETLOCATION=/u/at/pnef/Work/Code/TrackBasedGrooming/fastjet-3.0.3/fastjet-install/
-    #export FASTJETLOCATION=/u/at/pnef/Work/Code/fastjet-install/
-    export LD_LIBRARY_PATH=${FASTJETPATH}lib/:$LD_LIBRARY_PATH
+    export FASTJETLOCATION=/u/at/rubbo/nfs/Software/fastjet-3.0.3/fastjet-install/
+    export LD_LIBRARY_PATH=${FASTJETLOCATION}lib/:$LD_LIBRARY_PATH
+}
+
+setup_lhapdf() {
+    export LHAPDFLOCATION=/u/at/rubbo/nfs/Software/lhapdf-5.9.1/install/
+    export LD_LIBRARY_PATH=${LHAPDFLOCATION}lib/:$LD_LIBRARY_PATH
 }
 
 setup_boost() {
@@ -25,6 +28,6 @@ setup_boost() {
 
 setup_ROOT
 setup_PYTHIA
+setup_lhapdf
 setup_fastjet
 setup_boost
-
